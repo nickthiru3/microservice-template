@@ -1,8 +1,8 @@
 {
-  "name": "super-deals-bff",
+  "name": "super-deals-deals-ms",
   "version": "0.1.0",
   "bin": {
-    "super-deals-bff": "bin/super-deals-bff.js"
+    "super-deals-deals-ms": "bin/super-deals-deals-ms.js"
   },
   "scripts": {
     "build": "tsc",
