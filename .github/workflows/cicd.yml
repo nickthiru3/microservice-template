@@ -1,0 +1,62 @@
+name: Super Deals CI/CD
+
+on:
+  push:
+    branches: [master, candidate, release]
+  pull_request:
+    branches: [master, candidate, release]
+
+env:
+  AWS_REGION: us-east-1
+  ENV_NAME: ${{ github.ref == 'refs/heads/release' && 'production' || 'staging' }}
+  NODE_VERSION: '20.x'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Run linter
+        run: npm run lint
+  
+  # Note: Deployment is handled by AWS CDK Pipelines via CodeStar connections
+  # This workflow focuses on CI only - the CDK Pipeline handles CD
+  
+  validate-cdk:
+    name: Validate CDK Synthesis
+    needs: test
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/candidate'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Validate CDK Synthesis
+        run: |
+          npm run build
+          npx cdk synth --all
+        env:
+          ENV_NAME: local

@@ -1,56 +1,128 @@
-import {
-  CodePipeline,
-  CodePipelineSource,
-  ShellStep,
-  CodeBuildStep,
-} from "aws-cdk-lib/pipelines";
-import { Construct } from "constructs";
-import { SecretValue } from "aws-cdk-lib/core";
+import * as cdk from 'aws-cdk-lib';
+import * as pipelines from 'aws-cdk-lib/pipelines';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import { PipelineConfig, PipelineConstructProps } from '../types/pipeline';
+import PipelineStage from './stage/construct';
 
-import PipelineStage from "./stage/construct";
+/**
+ * Pipeline construct that sets up a CI/CD pipeline using AWS CodePipeline
+ */
+export class PipelineConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: PipelineConstructProps) {
+    super(scope, id);
 
-interface PipelineProps {
-  readonly envName: string;
-  readonly env: { account: string; region: string };
-  readonly gitHubRepo?: string; // Optional GitHub repo name
-  readonly gitHubBranch?: string; // Optional GitHub branch name
-  readonly gitHubTokenSecret?: string; // Optional secret name for GitHub token
-}
+    const { envName, env, config } = props;
+    const pipelineConfig = config as PipelineConfig;
+    
+    // GitHub configuration with fallbacks to config values
+    const gitHubRepo = props.gitHubRepo ?? config.gitHubRepo ?? 'nickthiru3/super-deals-deals-ms';
+    const gitHubBranch = props.gitHubBranch ?? config.gitHubBranch ?? 'main';
+    
+    // Note: GitHub token secret is not needed when using CodeStar connections
+    // CodeStar connections handle OAuth authentication automatically
 
-class PipelineConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: PipelineProps) {
-    super(scope, id, props);
-
-    const { envName, env } = props;
-
-    // Use provided values or defaults
-    const gitHubRepo = props.gitHubRepo || "nickthiru2/ms-env-sandbox";
-    const gitHubBranch = props.gitHubBranch || "main";
-    const gitHubTokenSecret = props.gitHubTokenSecret || "github-token";
-
-    const pipeline = new CodePipeline(this, "Pipeline", {
-      pipelineName: `${envName}-Pipeline`,
-      synth: new ShellStep("Synth", {
-        input: CodePipelineSource.gitHub(gitHubRepo, gitHubBranch, {
-          authentication: SecretValue.secretsManager(gitHubTokenSecret),
-        }),
-        commands: ["npm ci", "npx cdk synth"],
+    // Create the pipeline
+    const pipeline = new pipelines.CodePipeline(this, 'Pipeline', {
+      pipelineName: `super-deals-deals-ms-${envName}-pipeline`,
+      crossAccountKeys: true,
+      synth: new pipelines.CodeBuildStep('Synth', {
+        input: pipelines.CodePipelineSource.connection(
+          gitHubRepo,
+          gitHubBranch,
+          {
+            connectionArn: `arn:aws:codestar-connections:${env.region}:${env.account}:connection/${config.codestarConnectionId}`,
+          }
+        ),
+        installCommands: [
+          'npm ci',
+        ],
+        commands: [
+          'npm run build',
+          'npx cdk synth',
+        ],
+        primaryOutputDirectory: 'cdk.out',
+        rolePolicyStatements: [
+          new iam.PolicyStatement({
+            actions: ['sts:AssumeRole'],
+            resources: ['*'],
+            conditions: {
+              'ForAnyValue:StringEquals': {
+                'iam:ResourceTag/aws-cdk:bootstrap-role': ['image-pulling', 'file-publishing', 'deploy'],
+              },
+            },
+          }),
+        ],
       }),
+      codeBuildDefaults: {
+        buildEnvironment: {
+          buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+          privileged: true, // Required for building Docker images if needed
+        },
+        // No additional role policies needed for CodeStar connections
+        // CodeStar connections handle GitHub authentication automatically
+      },
     });
 
-    // Add a test stage to the pipeline with the environment name
-    const testStage = pipeline.addStage(
-      new PipelineStage(this, "PipelineStage", {
-        envName,
-        env,
-      })
-    );
+    // Add stages based on environment configuration
+    if (pipelineConfig.stages) {
+      for (const [stageName, stageConfig] of Object.entries(pipelineConfig.stages)) {
+        // Only create stages that are enabled in the config (default to true if not specified)
+        if (stageConfig?.enabled !== false) {
+          const stageEnv: cdk.Environment = {
+            account: stageConfig?.account || env.account || cdk.Aws.ACCOUNT_ID,
+            region: stageConfig?.region || env.region || cdk.Aws.REGION,
+          };
 
-    testStage.addPre(
-      new CodeBuildStep("unit-tests", {
-        commands: ["cd super-deals-deals-ms", "npm ci", "npm test"],
-      })
-    );
+          // Create the stage with merged config
+          const stage = new PipelineStage(this, `${stageName}Stage`, {
+            envName: stageName,
+            env: stageEnv,
+            config: {
+              ...pipelineConfig,
+              ...stageConfig,
+              envName: stageName,
+            },
+          });
+
+          // Set up stage options
+          const stageOptions: pipelines.AddStageOpts = {
+            // Add manual approval for production stages
+            pre: (stageName === 'production' || stageName === 'prod')
+              ? [new pipelines.ManualApprovalStep('PromoteToProduction')]
+              : undefined,
+          };
+
+          // Add the stage to the pipeline
+          pipeline.addStage(stage, stageOptions);
+        }
+      }
+    } else {
+      // Fallback for backward compatibility
+      const stage = new PipelineStage(this, `${envName}Stage`, {
+        envName,
+        env: {
+          account: env.account || cdk.Aws.ACCOUNT_ID,
+          region: env.region || cdk.Aws.REGION,
+        },
+        config: pipelineConfig,
+      });
+
+      pipeline.addStage(stage);
+    }
+
+    // Add pre-synth validation steps
+    pipeline.addWave('PreSynth', {
+      pre: [
+        new pipelines.CodeBuildStep('RunUnitTests', {
+          commands: [
+            'npm ci',
+            'npm test',
+          ],
+        }),
+      ],
+    });
   }
 }
 

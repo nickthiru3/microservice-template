@@ -3,9 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": [
-      "es2022"
-    ],
+    "lib": ["es2022"],
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
@@ -20,12 +18,16 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "typeRoots": [
-      "./node_modules/@types"
-    ]
+    "typeRoots": ["./node_modules/@types"],
+    "paths": {
+      "#config/*": ["./config/*"],
+      "#src/*": ["./src/*"],
+      "#lib/*": ["./lib/*"],
+      "#test/*": ["./test/*"],
+      "#types/*": ["./types/*"],
+      "#package-lock": ["./package-lock.json"]
+    }
   },
-  "exclude": [
-    "node_modules",
-    "cdk.out"
-  ]
+  "include": ["src/**/*", "lib/**/*"],
+  "exclude": ["node_modules", "cdk.out"]
 }

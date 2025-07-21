@@ -1,23 +1,24 @@
 import { Construct } from "constructs";
 
-import CreateConstruct from "./create-deal/construct";
+import CreateDealConstruct from "./create-deal/construct";
 // const DeleteConstruct = require("./delete/construct");
 
 class EndpointsConstruct extends Construct {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id, props);
 
-    const { lambda, http, merchantsResource } = props;
+    const { lambda, http, merchantsResource, db } = props;
 
     const dealsResource = merchantsResource.addResource(
       "deals",
       http.optionsWithCors
     );
 
-    new CreateConstruct(this, "CreateConstruct", {
+    new CreateDealConstruct(this, "CreateDealConstruct", {
       lambda,
       http,
       dealsResource,
+      db,
     });
 
     // new DeleteConstruct(this, "DeleteConstruct", {

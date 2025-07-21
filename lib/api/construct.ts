@@ -25,7 +25,7 @@ import AuthorizationConstruct from "./authorization/construct";
  * Stack for managing HTTP API Gateway
  * Handles API endpoints, authorization, and stages
  */
-class ApiStack extends Construct {
+class ApiConstruct extends Construct {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id, props);
 
@@ -77,4 +77,4 @@ class ApiStack extends Construct {
   }
 }
 
-export default ApiStack;
+export default ApiConstruct;
