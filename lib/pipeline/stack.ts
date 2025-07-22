@@ -42,7 +42,7 @@ export class PipelineStack extends cdk.Stack {
           "echo 'Node.js version:' && node --version",
           "echo 'npm version:' && npm --version",
           "echo 'Installing dependencies...'",
-          "npm ci --verbose --no-audit --no-fund",
+          "npm ci --verbose --no-audit --no-fund --ignore-scripts",
         ],
         commands: [
           "echo 'Starting build process...'",

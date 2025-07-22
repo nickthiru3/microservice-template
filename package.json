@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
-    "prepare": "[ -n \"$CI\" ] || husky install",
+    "prepare": "husky install",
     "cdk": "cdk",
     "env:dev": "cp .env.example .env",
     "dev": "ts-node --transpile-only bin/super-deals-deals-ms.ts",
