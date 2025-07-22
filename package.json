@@ -12,10 +12,11 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
-    "prepare": "husky install",
+    "prepare": "is-ci || husky install",
     "cdk": "cdk",
     "env:dev": "cp .env.example .env",
     "dev": "ts-node --transpile-only bin/super-deals-deals-ms.ts",
+    "deploy": "npx cdk deploy --all --outputs-file outputs.json",
     "local:deploy": "cdk deploy --app 'npx ts-node --prefer-ts-exts bin/super-deals-deals-ms.ts' --require-approval never",
     "deploy:staging": "cdk deploy --context env=staging --require-approval never",
     "deploy:prod": "cdk deploy --context env=prod --require-approval never",
@@ -50,17 +51,18 @@
     "@types/node": "22.7.9",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "aws-cdk": "2.1021.0",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-jest": "^27.0.0",
     "husky": "^8.0.0",
+    "is-ci": "^4.1.0",
     "jest": "^29.7.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "~5.6.3",
-    "aws-cdk": "2.1021.0"
+    "typescript": "~5.6.3"
   },
   "lint-staged": {
     "*.{ts,json}": [
@@ -70,6 +72,7 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.205.0",
-    "constructs": "^10.0.0"
+    "constructs": "^10.0.0",
+    "dotenv": "^17.2.0"
   }
 }
