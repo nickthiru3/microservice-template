@@ -7,14 +7,14 @@ import {
   TableV2Props,
 } from "aws-cdk-lib/aws-dynamodb";
 
-interface DbConstructProps {
+interface DbStackProps extends StackProps {
   envName: string;
 }
 
-class DbConstruct extends Construct {
+class DbStack extends Stack {
   public readonly table: TableV2;
 
-  constructor(scope: Construct, id: string, props: DbConstructProps) {
+  constructor(scope: Construct, id: string, props: DbStackProps) {
     super(scope, id, props);
 
     const { envName } = props;
@@ -47,4 +47,4 @@ class DbConstruct extends Construct {
   }
 }
 
-export default DbConstruct;
+export default DbStack;

@@ -1,5 +1,5 @@
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-
 import {
   RestApi,
   EndpointType,
@@ -9,9 +9,9 @@ import {
   MethodLoggingLevel,
 } from "aws-cdk-lib/aws-apigateway";
 
-import StageConstruct from "./stage/construct";
-import EndpointsConstruct from "./endpoints/construct";
-import AuthorizationConstruct from "./authorization/construct";
+import StageStack from "./stage/stack";
+import EndpointsStack from "./endpoints/stack";
+import AuthorizationStack from "./authorization/stack";
 
 /**
  * @typedef {Object} HttpStackProps
@@ -25,7 +25,7 @@ import AuthorizationConstruct from "./authorization/construct";
  * Stack for managing HTTP API Gateway
  * Handles API endpoints, authorization, and stages
  */
-class ApiConstruct extends Construct {
+class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id, props);
 
@@ -42,13 +42,13 @@ class ApiConstruct extends Construct {
     });
 
     // Stages
-    new StageConstruct(this, `StageConstruct-${envName}`, {
+    new StageStack(this, `StageStack-${envName}`, {
       api: this.restApi,
       stageName: envName,
     });
 
     /*** Authorization ***/
-    const authorization = new AuthorizationConstruct(this, "Authorization", {
+    const authorization = new AuthorizationStack(this, "Authorization", {
       restApi: this.restApi,
       auth,
       permissions,
@@ -66,7 +66,7 @@ class ApiConstruct extends Construct {
 
     /*** Endpoints ***/
 
-    new EndpointsConstruct(this, "EndpointsConstruct", {
+    new EndpointsStack(this, "EndpointsStack", {
       services,
       http: {
         restApi: this.restApi,
@@ -77,4 +77,4 @@ class ApiConstruct extends Construct {
   }
 }
 
-export default ApiConstruct;
+export default ApiStack;

@@ -1,11 +1,12 @@
 import { Construct } from "constructs";
-import ApiMonitoringConstruct from "./api/construct";
+import * as cdk from "aws-cdk-lib";
+import ApiMonitoringConstruct from "./api/stack";
 
-interface MonitorStackProps {
+interface MonitorStackProps extends cdk.StackProps {
   readonly envName: string;
 }
 
-class MonitorStack extends Construct {
+class MonitorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MonitorStackProps) {
     super(scope, id, props);
 

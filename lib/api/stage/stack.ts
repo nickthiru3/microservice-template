@@ -1,3 +1,4 @@
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import {
   Deployment,
@@ -9,7 +10,7 @@ import {
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnOutput } from "aws-cdk-lib";
 
-class StageConstruct extends Construct {
+class StageStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id, props);
 
@@ -70,4 +71,4 @@ class StageConstruct extends Construct {
   }
 }
 
-export default StageConstruct;
+export default StageStack;

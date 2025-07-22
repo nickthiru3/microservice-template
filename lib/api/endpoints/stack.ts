@@ -1,9 +1,7 @@
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-import CreateDealConstruct from "./create-deal/construct";
-// const DeleteConstruct = require("./delete/construct");
-
-class EndpointsConstruct extends Construct {
+class EndpointsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id, props);
 
@@ -14,12 +12,12 @@ class EndpointsConstruct extends Construct {
       http.optionsWithCors
     );
 
-    new CreateDealConstruct(this, "CreateDealConstruct", {
-      lambda,
-      http,
-      dealsResource,
-      db,
-    });
+    // new CreateDealConstruct(this, "CreateDealConstruct", {
+    //   lambda,
+    //   http,
+    //   dealsResource,
+    //   db,
+    // });
 
     // new DeleteConstruct(this, "DeleteConstruct", {
     //   lambda,
@@ -28,4 +26,4 @@ class EndpointsConstruct extends Construct {
   }
 }
 
-export default EndpointsConstruct;
+export default EndpointsStack;

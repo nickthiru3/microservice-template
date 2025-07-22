@@ -19,6 +19,7 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "typeRoots": ["./node_modules/@types"],
+    "baseUrl": ".",
     "paths": {
       "#config/*": ["./config/*"],
       "#src/*": ["./src/*"],

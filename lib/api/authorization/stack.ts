@@ -1,19 +1,19 @@
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
-/**
- * @typedef {Object} AuthorizationConstructProps
- * @property {import('aws-cdk-lib/aws-apigateway').RestApi} restApi - API Gateway REST API
- * @property {import('../../../auth/stack').AuthStack} auth - Auth stack
- * @property {import('../../../permissions/stack').PermissionsStack} permissions - Permissions stack
- */
+interface AuthorizationStackProps extends cdk.StackProps {
+  readonly restApi: cdk.aws_apigateway.RestApi;
+  readonly auth: cdk.aws_cognito.UserPool;
+  readonly permissions: cdk.aws_apigateway.AuthorizationType;
+}
 
 /**
  * Construct for managing API Gateway authorization
  * Handles Cognito authorizer and OAuth scope-based permissions
  */
-class AuthorizationConstruct extends Construct {
-  constructor(scope, id, props) {
+class AuthorizationStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: AuthorizationStackProps) {
     super(scope, id);
 
     const { restApi, auth, permissions } = props;
@@ -39,4 +39,4 @@ class AuthorizationConstruct extends Construct {
   }
 }
 
-export default AuthorizationConstruct;
+export default AuthorizationStack;
