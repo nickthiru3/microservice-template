@@ -29,8 +29,19 @@ export interface StageConfig {
 
 /**
  * Configuration for the pipeline
+ * Ensures account and region are required for Three-Flow architecture
  */
 export interface PipelineConfig extends Config {
+  /**
+   * AWS account ID (required for Three-Flow architecture)
+   */
+  account: string;
+  
+  /**
+   * AWS region (required for Three-Flow architecture)
+   */
+  region: string;
+  
   /**
    * Configuration for each deployment stage
    */

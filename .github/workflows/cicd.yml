@@ -1,14 +1,16 @@
 name: Super Deals CI/CD
 
 on:
+  # Continuous Integration on pushes and PRs, Deployment on version tags
   push:
     branches: [master, candidate, release]
+    tags:
+      - 'v*'  # Matches v1.0.0, v2.1.3, v1.0.0-beta, etc.
   pull_request:
     branches: [master, candidate, release]
 
 env:
   AWS_REGION: us-east-1
-  ENV_NAME: ${{ github.ref == 'refs/heads/release' && 'production' || 'staging' }}
   NODE_VERSION: '20.x'
 
 jobs:
@@ -33,8 +35,39 @@ jobs:
       - name: Run linter
         run: npm run lint
   
-  # Note: Deployment is handled by AWS CDK Pipelines via CodeStar connections
-  # This workflow focuses on CI only - the CDK Pipeline handles CD
+  # Deploy to AWS when version tags are pushed
+  deploy:
+    name: Deploy to AWS
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+      
+      - name: Trigger AWS CodePipeline
+        run: |
+          echo "Triggering deployment for version ${{ steps.version.outputs.version }}"
+          aws codepipeline start-pipeline-execution \
+            --name "super-deals-deals-ms-staging-pipeline" \
+            --source-revisions actionName=Source,revisionId=${{ github.sha }}
+          
+          echo "✅ Pipeline execution started successfully"
+          echo "🔗 View pipeline: https://console.aws.amazon.com/codesuite/codepipeline/pipelines/super-deals-deals-ms-staging-pipeline/view"
   
   validate-cdk:
     name: Validate CDK Synthesis

@@ -8,12 +8,12 @@ export interface Config {
   envName: string;
   
   /**
-   * AWS account ID
+   * AWS account ID (required for all environments)
    */
-  account: string | undefined;
+  account: string;
   
   /**
-   * AWS region
+   * AWS region (required for all environments)
    */
   region: string;
   

@@ -23,6 +23,16 @@
     "deploy:ci": "cdk deploy --require-approval never",
     "diff:staging": "cdk diff --context env=staging",
     "diff:prod": "cdk diff --context env=prod",
+    "localstack:setup": "./scripts/localstack-setup.sh",
+    "localstack:start": "docker-compose -f docker-compose.localstack.yml up -d",
+    "localstack:stop": "docker-compose -f docker-compose.localstack.yml down",
+    "localstack:restart": "npm run localstack:stop && npm run localstack:start",
+    "localstack:status": "docker-compose -f docker-compose.localstack.yml ps",
+    "localstack:logs": "docker-compose -f docker-compose.localstack.yml logs -f",
+    "localstack:health": "curl -s http://localhost:4566/health | jq",
+    "deploy:localstack": "ENV_NAME=localstack cdklocal deploy --all --require-approval never",
+    "dev:localstack": "ENV_NAME=localstack npm run dev",
+    "test:localstack": "ENV_NAME=localstack npm test",
     "synth:staging": "cdk synth --context env=staging",
     "synth:prod": "cdk synth --context env=prod"
   },
@@ -47,6 +57,7 @@
     ]
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -71,6 +82,7 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.205.0",
+    "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
     "dotenv": "^17.2.0"
   }

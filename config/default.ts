@@ -4,15 +4,58 @@
 
 export interface Config {
   envName: string;
-  account: string | undefined;
+  account?: string;
   region: string;
+  
   // GitHub and CodeStar configuration
+  github?: {
+    repo: string;
+    branch: string;
+    codestarConnectionId: string;
+  };
+  
+  // AWS configuration
+  aws?: {
+    region: string;
+    profile?: string;
+  };
+  
+  // Service endpoints (for LocalStack override)
+  endpoints?: {
+    dynamodb?: string;
+    s3?: string;
+    lambda?: string;
+    apigateway?: string;
+    sns?: string;
+    sqs?: string;
+    cloudwatch?: string;
+    logs?: string;
+    iam?: string;
+    sts?: string;
+    cloudformation?: string;
+  };
+  
+  // Resource naming configuration
+  resources?: {
+    tablePrefix?: string;
+    bucketPrefix?: string;
+    functionPrefix?: string;
+    apiPrefix?: string;
+  };
+  
+  // Development-specific settings
+  development?: {
+    enableDebugLogs?: boolean;
+    lambdaTimeout?: number;
+    enableHotReload?: boolean;
+    skipValidations?: boolean;
+  };
+  
+  // Legacy properties for backward compatibility
   gitHubRepo?: string;
   gitHubBranch?: string;
   codestarConnectionId?: string;
-  // Parameter Store configuration
   parameterStorePrefix?: string;
-  // Add other configuration properties here
 }
 
 /**
@@ -34,20 +77,87 @@ function getCodeStarConnectionId(envName: string): string {
 
 const defaultConfig: Config = {
   envName: process.env.ENV_NAME || 'local',
-  account: process.env.CDK_DEFAULT_ACCOUNT || process.env.AWS_ACCOUNT_ID,
+  // Account and region are required for all environments in Three-Flow architecture
+  account: process.env.CDK_DEFAULT_ACCOUNT || process.env.AWS_ACCOUNT_ID || (() => {
+    throw new Error('AWS account ID is required. Set CDK_DEFAULT_ACCOUNT or AWS_ACCOUNT_ID environment variable.');
+  })(),
   region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
-  // GitHub and CodeStar configuration
-  gitHubRepo: 'nickthiru3/super-deals-deals-ms',
+  
+  // GitHub configuration (new structure)
+  github: {
+    repo: 'nickthiru/super-deals-deals-ms',
+    branch: 'master',
+    codestarConnectionId: getCodeStarConnectionId(process.env.ENV_NAME || 'local')
+  },
+  
+  // AWS configuration
+  aws: {
+    region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+    profile: process.env.AWS_PROFILE
+  },
+  
+  // Resource naming defaults
+  resources: {
+    tablePrefix: 'super-deals-deals',
+    bucketPrefix: 'super-deals-deals',
+    functionPrefix: 'super-deals-deals',
+    apiPrefix: 'super-deals-deals'
+  },
+  
+  // Legacy properties for backward compatibility
+  gitHubRepo: 'nickthiru/super-deals-deals-ms',
   gitHubBranch: 'master',
-  codestarConnectionId: getCodeStarConnectionId(process.env.ENV_NAME || 'dev'),
-  // Parameter Store configuration
-  parameterStorePrefix: `/platform/${process.env.ENV_NAME || 'dev'}`,
-  // Add other default values here
+  codestarConnectionId: getCodeStarConnectionId(process.env.ENV_NAME || 'local'),
+  parameterStorePrefix: '/super-deals/deals-ms'
 };
 
-export const config: Config = {
-  ...defaultConfig,
-  // Override with environment-specific values if needed
-};
+/**
+ * Load environment-specific configuration
+ * Supports: local, localstack, staging, production
+ * Validates that required properties (account, region) are present
+ */
+function loadConfig(): Config {
+  const envName = process.env.ENV_NAME || 'local';
+  
+  let config: Config;
+  
+  try {
+    // Try to load environment-specific config
+    switch (envName) {
+      case 'localstack':
+        const localstackConfig = require('./localstack').default;
+        config = { ...defaultConfig, ...localstackConfig };
+        break;
+      
+      case 'staging':
+        const stagingConfig = require('./staging').default;
+        config = { ...defaultConfig, ...stagingConfig };
+        break;
+      
+      case 'production':
+        const productionConfig = require('./production').default;
+        config = { ...defaultConfig, ...productionConfig };
+        break;
+      
+      default:
+        config = defaultConfig;
+    }
+  } catch (error) {
+    console.warn(`Failed to load config for environment '${envName}', using default:`, error);
+    config = defaultConfig;
+  }
+  
+  // Validate required properties for Three-Flow architecture
+  if (!config.account) {
+    throw new Error(`AWS account ID is required for environment '${envName}'. Set CDK_DEFAULT_ACCOUNT or AWS_ACCOUNT_ID environment variable.`);
+  }
+  
+  if (!config.region) {
+    throw new Error(`AWS region is required for environment '${envName}'. Set CDK_DEFAULT_REGION environment variable or specify in config.`);
+  }
+  
+  return config;
+}
 
-export default config;
+export default loadConfig();
+export { defaultConfig, loadConfig };

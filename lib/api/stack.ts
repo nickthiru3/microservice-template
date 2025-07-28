@@ -12,21 +12,23 @@ import {
 import StageStack from "./stage/stack";
 import EndpointsStack from "./endpoints/stack";
 import AuthorizationStack from "./authorization/stack";
+import AuthStack from "../auth/stack";
+import PermissionsStack from "../permissions/stack";
+import ServicesStack from "../services/stack";
 
-/**
- * @typedef {Object} HttpStackProps
- * @property {string} envName - Stage name (e.g., 'dev', 'prod')
- * @property {import('../../auth/stack').AuthStack} auth - Auth stack
- * @property {import('../../permissions/stack').PermissionsStack} permissions - Permissions stack
- * @property {import('../../services/stack').ServicesStack} services - Services stack
- */
+interface ApiStackProps extends cdk.StackProps {
+  envName: string;
+  auth: AuthStack;
+  permissions: PermissionsStack;
+  services: ServicesStack;
+}
 
 /**
  * Stack for managing HTTP API Gateway
  * Handles API endpoints, authorization, and stages
  */
 class ApiStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: any) {
+  constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
     const { envName, auth, permissions, services } = props;

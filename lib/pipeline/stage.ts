@@ -3,11 +3,10 @@ import * as cdk from "aws-cdk-lib";
 import { Config } from "../types";
 
 // Import your constructs
-// import DbConstruct from "#lib/db/construct";
-// import MonitorStack from "#lib/monitor/construct";
-// import StorageStack from "#lib/storage/construct";
-// import ApiConstruct from "#lib/api/construct";
-import LambdaStack from "../lambda/stack";
+import DbStack from "../db/stack";
+import MonitorStack from "../monitor/stack";
+import StorageStack from "../storage/stack";
+import ApiStack from "../api/stack";
 
 /**
  * Properties for the PipelineStage
@@ -59,21 +58,18 @@ export class PipelineStage extends cdk.Stage {
     };
 
     // Initialize your constructs with the context
-    const lambda = new LambdaStack(this, "LambdaStack", context);
-
-    // Initialize other constructs as needed
-    // const db = new DbConstruct(this, "DbConstruct", context);
-    // const monitor = new MonitorStack(this, "MonitorStack", context);
-    // const storage = new StorageStack(this, "StorageStack", context);
-    // const api = new ApiConstruct(this, "ApiConstruct", context);
+    const db = new DbStack(this, "DbStack", context);
+    const monitor = new MonitorStack(this, "MonitorStack", context);
+    const storage = new StorageStack(this, "StorageStack", context);
+    const api = new ApiStack(this, "ApiStack", context);
 
     // Store outputs that might be needed by the pipeline
-    // this.apiUrl = api.apiUrl;
+    this.apiUrl = api.apiUrl;
 
     // Set up dependencies between constructs if needed
-    // monitor.addDependency(db);
-    // storage.addDependency(db);
-    // api.addDependency(storage);
+    monitor.addDependency(db);
+    storage.addDependency(db);
+    api.addDependency(storage);
   }
 }
 

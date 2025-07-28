@@ -36,6 +36,7 @@ export class PipelineStack extends cdk.Stack {
           gitHubBranch,
           {
             connectionArn: `arn:aws:codestar-connections:${env.region}:${env.account}:connection/${config.codestarConnectionId}`,
+            triggerOnPush: false,
           }
         ),
         installCommands: [
@@ -80,8 +81,6 @@ export class PipelineStack extends cdk.Stack {
             },
           },
         },
-        // No additional role policies needed for CodeStar connections
-        // CodeStar connections handle GitHub authentication automatically
       },
     });
 

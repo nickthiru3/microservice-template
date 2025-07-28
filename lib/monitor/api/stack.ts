@@ -1,6 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import Alarm4xxConstruct from "./4xx/stack";
+import Alarm4xxStack from "./4xx/stack";
 
 interface ApiMonitoringStackProps extends cdk.StackProps {
   readonly envName: string;
@@ -12,7 +12,7 @@ class ApiMonitoringStack extends cdk.Stack {
 
     const { envName } = props;
 
-    new Alarm4xxConstruct(this, "Alarm4xxConstruct", { envName });
+    new Alarm4xxStack(this, "Alarm4xxStack", { envName });
   }
 }
 
