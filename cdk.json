@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/super-deals-deals-ms.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/app-stack.ts",
   "watch": {
     "include": [
       "**"

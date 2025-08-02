@@ -1,4 +1,4 @@
-import { config as defaultConfig } from '#config/default';
+import { defaultConfig } from './default';
 
 const productionConfig = {
   ...defaultConfig,

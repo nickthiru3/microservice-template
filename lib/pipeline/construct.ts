@@ -1,17 +1,17 @@
+import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
 import * as pipelines from "aws-cdk-lib/pipelines";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
 import * as iam from "aws-cdk-lib/aws-iam";
-import { Construct } from "constructs";
-import { PipelineConfig, PipelineStackProps } from "../types/pipeline";
+import { PipelineConfig, PipelineConstructProps } from "../types/pipeline";
 import PipelineStage from "./stage";
 
 /**
  * Pipeline construct that sets up a CI/CD pipeline using AWS CodePipeline
  */
-export class PipelineStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: PipelineStackProps) {
-    super(scope, id, props);
+export class PipelineConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: PipelineConstructProps) {
+    super(scope, id);
 
     const { envName, env, config } = props;
     const pipelineConfig = config as PipelineConfig;
@@ -29,7 +29,7 @@ export class PipelineStack extends cdk.Stack {
     // Create the pipeline
     const pipeline = new pipelines.CodePipeline(this, "Pipeline", {
       pipelineName: `super-deals-deals-ms-${envName}-pipeline`,
-      crossAccountKeys: true,
+      crossAccountKeys: false,
       synth: new pipelines.CodeBuildStep("Synth", {
         input: pipelines.CodePipelineSource.connection(
           gitHubRepo,
@@ -145,4 +145,4 @@ export class PipelineStack extends cdk.Stack {
   }
 }
 
-export default PipelineStack;
+export default PipelineConstruct;

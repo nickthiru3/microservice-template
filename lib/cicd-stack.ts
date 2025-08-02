@@ -1,11 +1,11 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { SuperDealsStackProps } from "./types";
-import PipelineStack from "./pipeline/stack";
+import PipelineConstruct from "./pipeline/construct";
 import { PipelineConfig } from "./types/pipeline";
 import config from "../config/default";
 
-export class SuperDealsDealsMsStack extends cdk.Stack {
+export class CicdStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SuperDealsStackProps) {
     super(scope, id, props);
 
@@ -18,11 +18,10 @@ export class SuperDealsDealsMsStack extends cdk.Stack {
       region: env?.region || config.region,
     };
 
-    new PipelineStack(this, "PipelineStack", {
+    new PipelineConstruct(this, "PipelineStack", {
       envName,
       env: pipelineEnv,
       config: config as PipelineConfig,
-      gitHubTokenSecret: "github-token-nickthiru3",
     });
   }
 }

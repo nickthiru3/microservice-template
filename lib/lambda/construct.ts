@@ -4,7 +4,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { join } from "path";
 import { Construct } from "constructs";
 
-class LambdaStack extends cdk.Stack {
+class LambdaConstruct extends Construct {
   constructor(scope: Construct, id: string, props: any) {
     super(scope, id);
 
@@ -19,4 +19,4 @@ class LambdaStack extends cdk.Stack {
   }
 }
 
-export default LambdaStack;
+export default LambdaConstruct;

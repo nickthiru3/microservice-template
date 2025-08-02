@@ -1,8 +1,9 @@
 {
   "name": "super-deals-deals-ms",
   "version": "0.1.0",
+  "description": "Super Deals Deals Microservice",
   "bin": {
-    "super-deals-deals-ms": "bin/super-deals-deals-ms.js"
+    "microservice-app": "bin/app-stack.js"
   },
   "scripts": {
     "build": "tsc",
@@ -13,28 +14,21 @@
     "lint": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "prepare": "husky install",
-    "cdk": "cdk",
-    "env:dev": "cp .env.example .env",
-    "dev": "ts-node --transpile-only bin/super-deals-deals-ms.ts",
-    "deploy": "npx cdk deploy --all --outputs-file outputs.json",
-    "local:deploy": "cdk deploy --app 'npx ts-node --prefer-ts-exts bin/super-deals-deals-ms.ts' --require-approval never",
-    "deploy:staging": "cdk deploy --context env=staging --require-approval never",
-    "deploy:prod": "cdk deploy --context env=prod --require-approval never",
-    "deploy:ci": "cdk deploy --require-approval never",
-    "diff:staging": "cdk diff --context env=staging",
-    "diff:prod": "cdk diff --context env=prod",
+    "setup": "cp .env.example .env && echo 'Please update .env with your values'",
+    "dev": "ENV_NAME=local ts-node --transpile-only bin/app-stack.ts",
+    "deploy:local": "ENV_NAME=local cdklocal deploy --all --require-approval never",
+    "diff:local": "ENV_NAME=local cdklocal diff --all",
+    "destroy:local": "ENV_NAME=local cdklocal destroy --all --force",
+    "bootstrap:pipeline": "ENV_NAME=staging npx cdk deploy --all --require-approval never",
+    "diff:staging": "ENV_NAME=staging npx cdk diff --all",
+    "diff:prod": "ENV_NAME=production npx cdk diff --all",
     "localstack:setup": "./scripts/localstack-setup.sh",
     "localstack:start": "docker-compose -f docker-compose.localstack.yml up -d",
     "localstack:stop": "docker-compose -f docker-compose.localstack.yml down",
     "localstack:restart": "npm run localstack:stop && npm run localstack:start",
     "localstack:status": "docker-compose -f docker-compose.localstack.yml ps",
     "localstack:logs": "docker-compose -f docker-compose.localstack.yml logs -f",
-    "localstack:health": "curl -s http://localhost:4566/health | jq",
-    "deploy:localstack": "ENV_NAME=localstack cdklocal deploy --all --require-approval never",
-    "dev:localstack": "ENV_NAME=localstack npm run dev",
-    "test:localstack": "ENV_NAME=localstack npm test",
-    "synth:staging": "cdk synth --context env=staging",
-    "synth:prod": "cdk synth --context env=prod"
+    "localstack:health": "curl -s http://localhost:4566/health | jq"
   },
   "imports": {
     "#config/*": [

@@ -1,4 +1,4 @@
-# Super Deals - Deals Microservice
+<!-- # Super Deals - Deals Microservice
 
 This is a serverless microservice for the Super Deals platform, built using AWS CDK with TypeScript.
 
@@ -141,4 +141,4 @@ The project includes GitHub Actions workflows for CI/CD. The pipeline automatica
 
 ## License
 
-[Your License Here]
+[Your License Here] -->

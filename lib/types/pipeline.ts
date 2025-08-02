@@ -36,12 +36,12 @@ export interface PipelineConfig extends Config {
    * AWS account ID (required for Three-Flow architecture)
    */
   account: string;
-  
+
   /**
    * AWS region (required for Three-Flow architecture)
    */
   region: string;
-  
+
   /**
    * Configuration for each deployment stage
    */
@@ -71,7 +71,7 @@ export interface PipelineConfig extends Config {
 /**
  * Properties for the PipelineConstruct
  */
-export interface PipelineStackProps {
+export interface PipelineConstructProps {
   /**
    * The name of the environment (e.g., 'dev', 'staging', 'prod')
    */
@@ -83,27 +83,19 @@ export interface PipelineStackProps {
   readonly env: Environment;
 
   /**
-   * Pipeline configuration
+   * Configuration object for the pipeline
    */
   readonly config: PipelineConfig;
 
   /**
-   * GitHub repository in format 'owner/repo'
-   * @default Uses value from config
+   * GitHub repository (optional override)
    */
   readonly gitHubRepo?: string;
 
   /**
-   * GitHub branch to trigger the pipeline
-   * @default Uses value from config
+   * GitHub branch (optional override)
    */
   readonly gitHubBranch?: string;
-
-  /**
-   * Name of the AWS Secrets Manager secret containing the GitHub token
-   * @default Uses value from config
-   */
-  readonly gitHubTokenSecret?: string;
 }
 
 export * from "./config";

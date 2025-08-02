@@ -7,6 +7,12 @@ export interface Config {
   account?: string;
   region: string;
   
+  // Service metadata
+  service?: {
+    name: string;
+    displayName: string;
+  };
+  
   // GitHub and CodeStar configuration
   github?: {
     repo: string;
@@ -81,34 +87,60 @@ const defaultConfig: Config = {
   account: process.env.CDK_DEFAULT_ACCOUNT || process.env.AWS_ACCOUNT_ID || (() => {
     throw new Error('AWS account ID is required. Set CDK_DEFAULT_ACCOUNT or AWS_ACCOUNT_ID environment variable.');
   })(),
-  region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+  region: process.env.CDK_DEFAULT_REGION || process.env.AWS_DEFAULT_REGION || (() => {
+    throw new Error('AWS region is required. Set CDK_DEFAULT_REGION or AWS_DEFAULT_REGION environment variable.');
+  })(),
+  
+  // Service metadata
+  service: {
+    name: process.env.SERVICE_NAME || (() => {
+      throw new Error('Service name is required. Set SERVICE_NAME environment variable.');
+    })(),
+    displayName: process.env.SERVICE_DISPLAY_NAME || process.env.SERVICE_NAME || 'Microservice'
+  },
   
   // GitHub configuration (new structure)
   github: {
-    repo: 'nickthiru/super-deals-deals-ms',
-    branch: 'master',
+    repo: process.env.GITHUB_REPO || (() => {
+      throw new Error('GitHub repository is required. Set GITHUB_REPO environment variable.');
+    })(),
+    branch: process.env.GITHUB_BRANCH || 'release',
     codestarConnectionId: getCodeStarConnectionId(process.env.ENV_NAME || 'local')
   },
   
   // AWS configuration
   aws: {
-    region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+    region: process.env.CDK_DEFAULT_REGION || process.env.AWS_DEFAULT_REGION || (() => {
+      throw new Error('AWS region is required. Set CDK_DEFAULT_REGION or AWS_DEFAULT_REGION environment variable.');
+    })(),
     profile: process.env.AWS_PROFILE
   },
   
-  // Resource naming defaults
+  // Resource naming defaults (derived from service name)
   resources: {
-    tablePrefix: 'super-deals-deals',
-    bucketPrefix: 'super-deals-deals',
-    functionPrefix: 'super-deals-deals',
-    apiPrefix: 'super-deals-deals'
+    tablePrefix: process.env.RESOURCE_PREFIX || process.env.SERVICE_NAME || (() => {
+      throw new Error('Resource prefix is required. Set RESOURCE_PREFIX or SERVICE_NAME environment variable.');
+    })(),
+    bucketPrefix: process.env.RESOURCE_PREFIX || process.env.SERVICE_NAME || (() => {
+      throw new Error('Resource prefix is required. Set RESOURCE_PREFIX or SERVICE_NAME environment variable.');
+    })(),
+    functionPrefix: process.env.RESOURCE_PREFIX || process.env.SERVICE_NAME || (() => {
+      throw new Error('Resource prefix is required. Set RESOURCE_PREFIX or SERVICE_NAME environment variable.');
+    })(),
+    apiPrefix: process.env.RESOURCE_PREFIX || process.env.SERVICE_NAME || (() => {
+      throw new Error('Resource prefix is required. Set RESOURCE_PREFIX or SERVICE_NAME environment variable.');
+    })()
   },
   
   // Legacy properties for backward compatibility
-  gitHubRepo: 'nickthiru/super-deals-deals-ms',
-  gitHubBranch: 'master',
+  gitHubRepo: process.env.GITHUB_REPO || (() => {
+    throw new Error('GitHub repository is required. Set GITHUB_REPO environment variable.');
+  })(),
+  gitHubBranch: process.env.GITHUB_BRANCH || 'release',
   codestarConnectionId: getCodeStarConnectionId(process.env.ENV_NAME || 'local'),
-  parameterStorePrefix: '/super-deals/deals-ms'
+  parameterStorePrefix: process.env.PARAMETER_STORE_PREFIX || (() => {
+    throw new Error('Parameter store prefix is required. Set PARAMETER_STORE_PREFIX environment variable.');
+  })()
 };
 
 /**
