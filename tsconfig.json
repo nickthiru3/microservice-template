@@ -29,6 +29,6 @@
       "#package-lock": ["./package-lock.json"]
     }
   },
-  "include": ["src/**/*", "lib/**/*"],
+  "include": ["src/**/*", "lib/**/*", "types"],
   "exclude": ["node_modules", "cdk.out"]
 }

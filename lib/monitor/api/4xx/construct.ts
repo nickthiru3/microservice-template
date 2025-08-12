@@ -1,4 +1,3 @@
-import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
 import { Alarm, Metric, Unit } from "aws-cdk-lib/aws-cloudwatch";
@@ -9,13 +8,13 @@ import { Topic } from "aws-cdk-lib/aws-sns";
 import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { join } from "path";
 
-interface Alarm4xxStackProps extends cdk.StackProps {
+interface Alarm4xxConstructProps {
   readonly envName: string;
 }
 
-class Alarm4xxStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: Alarm4xxStackProps) {
-    super(scope, id, props);
+class Alarm4xxConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: Alarm4xxConstructProps) {
+    super(scope, id);
 
     const { envName } = props;
 
@@ -60,4 +59,4 @@ class Alarm4xxStack extends cdk.Stack {
   }
 }
 
-export default Alarm4xxStack;
+export default Alarm4xxConstruct;

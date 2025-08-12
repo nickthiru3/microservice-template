@@ -1,5 +1,4 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib";
 import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import {
   Bucket,
@@ -8,13 +7,15 @@ import {
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
 
-interface StorageStackProps extends cdk.StackProps {
+interface StorageConstructProps {
   envName: string;
 }
 
-class StorageStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: StorageStackProps) {
-    super(scope, id, props);
+class StorageConstruct extends Construct {
+  public readonly s3Bucket: Bucket;
+
+  constructor(scope: Construct, id: string, props: StorageConstructProps) {
+    super(scope, id);
 
     // We can use envName for resource naming or other environment-specific configurations
     const { envName } = props;
@@ -76,4 +77,4 @@ class StorageStack extends cdk.Stack {
   }
 }
 
-export default StorageStack;
+export default StorageConstruct;

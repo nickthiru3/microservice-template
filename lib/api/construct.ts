@@ -9,14 +9,13 @@ import {
   MethodLoggingLevel,
 } from "aws-cdk-lib/aws-apigateway";
 
-import StageStack from "./stage/stack";
-import EndpointsStack from "./endpoints/stack";
-import AuthorizationStack from "./authorization/stack";
-import AuthStack from "../auth/stack";
-import PermissionsStack from "../permissions/stack";
-import ServicesStack from "../services/stack";
+import StageConstruct from "./stage/construct";
+import EndpointsConstruct from "./endpoints/construct";
+import AuthorizationConstruct from "./authorization/construct";
+import AuthStack from "./auth/construct";
+import PermissionsStack from "./permissions/construct";
 
-interface ApiStackProps extends cdk.StackProps {
+interface ApiConstructProps {
   envName: string;
   auth: AuthStack;
   permissions: PermissionsStack;
@@ -27,8 +26,8 @@ interface ApiStackProps extends cdk.StackProps {
  * Stack for managing HTTP API Gateway
  * Handles API endpoints, authorization, and stages
  */
-class ApiStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: ApiStackProps) {
+class ApiConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: ApiConstructProps) {
     super(scope, id, props);
 
     const { envName, auth, permissions, services } = props;
@@ -44,13 +43,13 @@ class ApiStack extends cdk.Stack {
     });
 
     // Stages
-    new StageStack(this, `StageStack-${envName}`, {
+    new StageConstruct(this, `StageConstruct-${envName}`, {
       api: this.restApi,
       stageName: envName,
     });
 
     /*** Authorization ***/
-    const authorization = new AuthorizationStack(this, "Authorization", {
+    const authorization = new AuthorizationConstruct(this, "Authorization", {
       restApi: this.restApi,
       auth,
       permissions,
@@ -68,7 +67,7 @@ class ApiStack extends cdk.Stack {
 
     /*** Endpoints ***/
 
-    new EndpointsStack(this, "EndpointsStack", {
+    new EndpointsConstruct(this, "EndpointsConstruct", {
       services,
       http: {
         restApi: this.restApi,
@@ -79,4 +78,4 @@ class ApiStack extends cdk.Stack {
   }
 }
 
-export default ApiStack;
+export default ApiConstruct;

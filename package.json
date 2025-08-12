@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Super Deals Deals Microservice",
   "bin": {
-    "microservice-app": "bin/app-stack.js"
+    "microservice-app": "bin/app.js"
   },
   "scripts": {
     "build": "tsc",

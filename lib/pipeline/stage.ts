@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
-import { Config } from "../types";
+import { Config } from "../../types";
 
 // Import your constructs
 // import DbStack from "../db/stack";
@@ -41,41 +41,10 @@ export class PipelineStage extends cdk.Stage {
 
     const { envName, env, config } = props;
 
-    // Skip deployment if the environment is disabled in the config
-    if (config.enabled === false) {
-      console.warn(`Skipping deployment for disabled environment: ${envName}`);
-      return;
-    }
-
-    // Create a context object to pass to all constructs
-    const context = {
-      envName,
-      env,
-      config: {
-        ...config,
-        // Allow stage-specific overrides
-        ...(config.stages?.[envName] || {}),
-      },
-    };
-
     new ServiceStack(this, "ServiceStack", {
       envName,
       env,
     });
-
-    // Initialize your constructs with the context
-    // const db = new DbStack(this, "DbStack", context);
-    // const monitor = new MonitorStack(this, "MonitorStack", context);
-    // const storage = new StorageStack(this, "StorageStack", context);
-    // const api = new ApiStack(this, "ApiStack", context);
-
-    // Store outputs that might be needed by the pipeline
-    // this.apiUrl = api.apiUrl;
-
-    // Set up dependencies between constructs if needed
-    // monitor.addDependency(db);
-    // storage.addDependency(db);
-    // api.addDependency(storage);
   }
 }
 

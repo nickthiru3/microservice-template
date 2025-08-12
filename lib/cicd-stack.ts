@@ -1,8 +1,8 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { SuperDealsStackProps } from "./types";
+import { SuperDealsStackProps } from "../types";
 import PipelineConstruct from "./pipeline/construct";
-import { PipelineConfig } from "./types/pipeline";
+import { PipelineConfig } from "../types/pipeline";
 import config from "../config/default";
 
 export class CicdStack extends cdk.Stack {

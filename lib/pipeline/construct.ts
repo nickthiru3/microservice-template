@@ -3,7 +3,7 @@ import * as cdk from "aws-cdk-lib";
 import * as pipelines from "aws-cdk-lib/pipelines";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
 import * as iam from "aws-cdk-lib/aws-iam";
-import { PipelineConfig, PipelineConstructProps } from "../types/pipeline";
+import { PipelineConfig, PipelineConstructProps } from "../../types/pipeline";
 import PipelineStage from "./stage";
 
 /**

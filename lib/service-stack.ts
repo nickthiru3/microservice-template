@@ -1,31 +1,69 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib";
-import LambdaConstruct from "./lambda/construct";
+import { Stack, StackProps } from "aws-cdk-lib";
+import DbConstruct from "./db/construct";
+import StorageConstruct from "./storage/construct";
+import PermissionsConstruct from "./permissions/construct";
+import ServicesConstruct from "./services/construct";
+import ApiStack from "./api/construct";
+import MonitorConstruct from "./monitor/construct";
 
-interface ServiceStackProps extends cdk.StackProps {
+interface ServiceStackProps extends StackProps {
   envName: string;
 }
 
-export class ServiceStack extends cdk.Stack {
+/**
+ * Service stack containing all microservice infrastructure constructs
+ * Used by both LocalStack (local development) and AWS Pipeline (staging/production)
+ */
+export class ServiceStack extends Stack {
+  /**
+   * DynamoDB table construct
+   */
+  public readonly database: DbConstruct;
+
   constructor(scope: Construct, id: string, props: ServiceStackProps) {
     super(scope, id, props);
 
-    // new LambdaConstruct(this, "lambda", {
-    //   envName: props.envName,
-    // });
+    const { envName } = props;
 
-    // Initialize your constructs with the context
-    // const db = new DbStack(this, "DbStack", context);
-    // const monitor = new MonitorStack(this, "MonitorStack", context);
-    // const storage = new StorageStack(this, "StorageStack", context);
-    // const api = new ApiStack(this, "ApiStack", context);
+    // Database construct with configuration from config/database.ts
+    const database = new DbConstruct(this, "Database", {
+      envName,
+      serviceName: "deals-ms",
+    });
 
-    // Store outputs that might be needed by the pipeline
-    // this.apiUrl = api.apiUrl;
+    const storage = new StorageConstruct(this, "Storage", {
+      envName,
+    });
+
+    const permissions = new PermissionsConstruct(this, "PermissionsStack", {
+      iam,
+      storage,
+      auth,
+    });
+
+    const services = new ServicesConstruct(this, "ServicesStack", {
+      envName,
+      auth,
+      db,
+      sns,
+      email,
+    });
+
+    const api = new ApiStack(this, "Api", {
+      envName,
+      auth,
+      permissions,
+      services,
+    });
+
+    const monitor = new MonitorConstruct(this, "Monitor", {
+      envName,
+    });
 
     // Set up dependencies between constructs if needed
-    // monitor.addDependency(db);
-    // storage.addDependency(db);
-    // api.addDependency(storage);
+    // monitor.node.addDependency(this.database);
+    // storage.node.addDependency(this.database);
+    // api.node.addDependency(storage);
   }
 }
