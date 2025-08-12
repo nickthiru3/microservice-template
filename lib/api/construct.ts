@@ -12,8 +12,9 @@ import {
 import StageConstruct from "./stage/construct";
 import EndpointsConstruct from "./endpoints/construct";
 import AuthorizationConstruct from "./authorization/construct";
-import AuthStack from "./auth/construct";
-import PermissionsStack from "./permissions/construct";
+// import AuthStack from "../auth/construct";
+import PermissionsStack from "../permissions/construct";
+import ServicesStack from "../services/construct";
 
 interface ApiConstructProps {
   envName: string;
@@ -27,6 +28,8 @@ interface ApiConstructProps {
  * Handles API endpoints, authorization, and stages
  */
 class ApiConstruct extends Construct {
+  restApi: RestApi;
+
   constructor(scope: Construct, id: string, props: ApiConstructProps) {
     super(scope, id, props);
 

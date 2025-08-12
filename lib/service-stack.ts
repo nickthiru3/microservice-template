@@ -16,9 +16,6 @@ interface ServiceStackProps extends StackProps {
  * Used by both LocalStack (local development) and AWS Pipeline (staging/production)
  */
 export class ServiceStack extends Stack {
-  /**
-   * DynamoDB table construct
-   */
   public readonly database: DbConstruct;
 
   constructor(scope: Construct, id: string, props: ServiceStackProps) {

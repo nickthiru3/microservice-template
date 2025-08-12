@@ -9,9 +9,15 @@ import path from "path";
 
 import schema from "./schema";
 
+interface CreateDealConstructProps {
+  readonly http: any;
+  readonly dealsResource: any;
+  readonly db: any;
+}
+
 class CreateDealConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: any) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, props: CreateDealConstructProps) {
+    super(scope, id);
 
     const { http, dealsResource, db } = props;
 

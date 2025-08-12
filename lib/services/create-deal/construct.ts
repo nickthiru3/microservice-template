@@ -1,12 +1,18 @@
-const { Construct } = require("constructs");
-const { NodejsFunction } = require("aws-cdk-lib/aws-lambda-nodejs");
-const { Runtime } = require("aws-cdk-lib/aws-lambda");
+import { Construct } from "constructs";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Runtime } from "aws-cdk-lib/aws-lambda";
 // const { Duration } = require("aws-cdk-lib");
-const { PolicyStatement, Effect } = require("aws-cdk-lib/aws-iam");
-const path = require("path");
+import { PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
+import path from "path";
+
+interface CreateConstructProps {
+  readonly db: any;
+}
 
 class CreateConstruct extends Construct {
-  constructor(scope, id, props) {
+  lambda: NodejsFunction;
+
+  constructor(scope: Construct, id: string, props: CreateConstructProps) {
     super(scope, id);
 
     const { db } = props;
@@ -40,4 +46,4 @@ class CreateConstruct extends Construct {
   }
 }
 
-module.exports = CreateConstruct;
+export default CreateConstruct;

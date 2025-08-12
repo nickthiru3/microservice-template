@@ -8,9 +8,15 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnOutput } from "aws-cdk-lib";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
+
+interface StageConstructProps {
+  readonly api: RestApi;
+  readonly stageName: string;
+}
 
 class StageConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: any) {
+  constructor(scope: Construct, id: string, props: StageConstructProps) {
     super(scope, id);
 
     const { api, stageName } = props;

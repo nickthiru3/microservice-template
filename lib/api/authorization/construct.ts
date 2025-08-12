@@ -1,11 +1,14 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { AuthorizationType } from "aws-cdk-lib/aws-apigateway";
+import { UserPool } from "aws-cdk-lib/aws-cognito";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
 
 interface AuthorizationConstructProps {
-  readonly restApi: cdk.aws_apigateway.RestApi;
-  readonly auth: cdk.aws_cognito.UserPool;
-  readonly permissions: cdk.aws_apigateway.AuthorizationType;
+  readonly restApi: RestApi;
+  readonly auth: UserPool;
+  readonly permissions: AuthorizationType;
 }
 
 /**
@@ -13,6 +16,11 @@ interface AuthorizationConstructProps {
  * Handles Cognito authorizer and OAuth scope-based permissions
  */
 class AuthorizationConstruct extends Construct {
+  authorizer: CognitoUserPoolsAuthorizer;
+  authOptions: {
+    deals: AuthorizationType;
+  };
+
   constructor(
     scope: Construct,
     id: string,

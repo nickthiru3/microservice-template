@@ -1,10 +1,15 @@
 import { Construct } from "constructs";
-
 import PostConstruct from "./post/construct";
+import DbConstruct from "../../db/construct";
+
+interface DealsConstructProps {
+  readonly http: any;
+  readonly db: DbConstruct;
+}
 
 class DealsConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: any) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, props: DealsConstructProps) {
+    super(scope, id);
 
     const { http, db } = props;
 
