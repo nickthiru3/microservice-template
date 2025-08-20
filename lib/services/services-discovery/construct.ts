@@ -1,22 +1,22 @@
 import { Construct } from "constructs";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
-// const { Duration } = require("aws-cdk-lib");
 import { PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
 import path from "path";
-import DbConstruct from "#lib/db/construct";
 
-interface CreateDealConstructProps {
-  readonly db: DbConstruct;
+interface ServicesDiscoveryConstructProps {
+  readonly envName: string;
+  readonly ssmPublicPath?: string;
+  readonly region?: string;
 }
 
-class CreateDealConstruct extends Construct {
+class ServicesDiscoveryConstruct extends Construct {
   lambda: NodejsFunction;
 
-  constructor(scope: Construct, id: string, props: CreateDealConstructProps) {
+  constructor(scope: Construct, id: string, props: ServicesDiscoveryConstructProps) {
     super(scope, id);
 
-    const { db } = props;
+    const { envName, ssmPublicPath, region } = props;
 
     this.lambda = new NodejsFunction(this, "NodejsFunction", {
       bundling: {
@@ -24,27 +24,28 @@ class CreateDealConstruct extends Construct {
         forceDockerBundling: true,
       },
       runtime: Runtime.NODEJS_20_X,
-      // memorySize: 1024,
-      // memorySize: 512,
-      // timeout: Duration.minutes(1),
       entry: path.join(
         __dirname,
-        "#src/services/create-deal/lambda-handler.ts"
+        "../../../src/services/services-discovery/lambda-handler.ts"
       ),
       handler: "handler",
       depsLockFilePath: require.resolve("#package-lock"),
       environment: {
-        TABLE_NAME: db.table.tableName,
+        ENV_NAME: envName,
+        AWS_REGION: region ?? process.env.AWS_REGION ?? "",
+        SSM_PUBLIC_PATH: ssmPublicPath ?? "",
       },
       initialPolicy: [
         new PolicyStatement({
           effect: Effect.ALLOW,
-          resources: [db.table.tableArn],
-          actions: ["dynamodb:PutItem"],
+          actions: ["ssm:GetParametersByPath"],
+          resources: [
+            `arn:aws:ssm:*:*:parameter${ssmPublicPath ?? ''}*`,
+          ],
         }),
       ],
     });
   }
 }
 
-export default CreateDealConstruct;
+export default ServicesDiscoveryConstruct;

@@ -2,11 +2,11 @@ import { Construct } from "constructs";
 import {
   UserPoolResourceServer,
   ResourceServerScope,
-  UserPool,
 } from "aws-cdk-lib/aws-cognito";
+import AuthConstruct from "#lib/auth/construct";
 
 interface ResourceServerConstructProps {
-  readonly userPool: UserPool;
+  readonly auth: AuthConstruct;
   readonly envName: string;
 }
 
@@ -17,6 +17,7 @@ interface ResourceServerConstructProps {
 class ResourceServerConstruct extends Construct {
   scopes: ResourceServerScope[];
   resourceServer: UserPoolResourceServer;
+  identifier: string;
 
   constructor(
     scope: Construct,
@@ -25,7 +26,7 @@ class ResourceServerConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { userPool, envName } = props;
+    const { auth, envName } = props;
 
     // Define scopes for Deals API
     this.scopes = [
@@ -44,20 +45,21 @@ class ResourceServerConstruct extends Construct {
     ];
 
     // Create Resource Server
-    this.resourceServer = new UserPoolResourceServer(this, "ResourceServer", {
-      userPool,
-      identifier: `deals-${envName}`, // Include environment name in identifier
-      scopes: this.scopes,
-    });
+    this.resourceServer = new UserPoolResourceServer(
+      this,
+      "UserPoolResourceServer",
+      {
+        userPool: auth.userPool,
+        identifier: `deals-${envName}`, // Include environment name in identifier
+        scopes: this.scopes,
+      }
+    );
+    this.identifier = this.resourceServer.userPoolResourceServerId;
   }
 
-  /**
-   * Get OAuth scopes for use in app client configuration
-   * @returns {string[]} Array of OAuth scope strings
-   */
-  getOAuthScopes() {
+  getOAuthScopes(): string[] {
     return this.scopes.map(
-      (scope: ResourceServerScope) => `deals/${scope.scopeName}`
+      (scope: ResourceServerScope) => `${this.identifier}/${scope.scopeName}`
     );
   }
 }

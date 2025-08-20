@@ -1,14 +1,13 @@
-import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { AuthorizationType } from "aws-cdk-lib/aws-apigateway";
-import { UserPool } from "aws-cdk-lib/aws-cognito";
+import { IUserPool } from "aws-cdk-lib/aws-cognito";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import PermissionsConstruct from "../../permissions/construct";
 
 interface AuthorizationConstructProps {
   readonly restApi: RestApi;
-  readonly auth: UserPool;
-  readonly permissions: AuthorizationType;
+  readonly userPool: IUserPool;
+  readonly permissions: PermissionsConstruct;
 }
 
 /**
@@ -18,7 +17,11 @@ interface AuthorizationConstructProps {
 class AuthorizationConstruct extends Construct {
   authorizer: CognitoUserPoolsAuthorizer;
   authOptions: {
-    deals: AuthorizationType;
+    deals: {
+      readDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
+      writeDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
+      deleteDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
+    };
   };
 
   constructor(
@@ -28,14 +31,14 @@ class AuthorizationConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { restApi, auth, permissions } = props;
+    const { restApi, userPool, permissions } = props;
 
     // Create and attach Cognito authorizer
     this.authorizer = new CognitoUserPoolsAuthorizer(
       this,
       "CognitoUserPoolsAuthorizer",
       {
-        cognitoUserPools: [auth.userPool.pool],
+        cognitoUserPools: [userPool],
         identitySource: "method.request.header.Authorization",
       }
     );
@@ -43,9 +46,7 @@ class AuthorizationConstruct extends Construct {
 
     // Get authorization options for different services
     this.authOptions = {
-      deals: permissions.oauth.deals.getAuthOptions(
-        this.authorizer.authorizerId
-      ),
+      deals: permissions.oauth.getAuthOptions(this.authorizer.authorizerId),
       // Add more service auth options here as needed
     };
   }

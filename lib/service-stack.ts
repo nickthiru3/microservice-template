@@ -1,11 +1,15 @@
 import { Construct } from "constructs";
-import { Stack, StackProps } from "aws-cdk-lib";
+import { Stack, StackProps, Aws } from "aws-cdk-lib";
+import MonitorConstruct from "./monitor/construct";
 import DbConstruct from "./db/construct";
 import StorageConstruct from "./storage/construct";
 import PermissionsConstruct from "./permissions/construct";
 import ServicesConstruct from "./services/construct";
-import ApiStack from "./api/construct";
-import MonitorConstruct from "./monitor/construct";
+import ApiConstruct from "./api/construct";
+// import EventsConstruct from "./events/construct";
+import AuthBindingsConstruct from "./auth/construct";
+import IamBindingsConstruct from "./iam/construct";
+import SsmPublicationConstruct from "./ssm-publications/construct";
 
 interface ServiceStackProps extends StackProps {
   envName: string;
@@ -23,39 +27,58 @@ export class ServiceStack extends Stack {
 
     const { envName } = props;
 
+    const monitor = new MonitorConstruct(this, "MonitorConstruct", {
+      envName,
+    });
+
     // Database construct with configuration from config/database.ts
-    const database = new DbConstruct(this, "Database", {
+    const db = new DbConstruct(this, "DatabaseConstruct", {
       envName,
       serviceName: "deals-ms",
     });
 
-    const storage = new StorageConstruct(this, "Storage", {
+    const storage = new StorageConstruct(this, "StorageConstruct", {
       envName,
     });
 
-    const permissions = new PermissionsConstruct(this, "PermissionsStack", {
+    // Import shared auth/IAM primitives via infra-contracts (SSM)
+    const auth = new AuthBindingsConstruct(this, "AuthBindingsConstruct", {
+      envName,
+    });
+    const iam = new IamBindingsConstruct(this, "IamBindingsConstruct", {
+      envName,
+    });
+
+    const permissions = new PermissionsConstruct(this, "PermissionsConstruct", {
+      envName,
       iam,
+      auth,
       storage,
-      auth,
     });
 
-    const services = new ServicesConstruct(this, "ServicesStack", {
+    const services = new ServicesConstruct(this, "ServicesConstruct", {
       envName,
-      auth,
       db,
-      sns,
-      email,
     });
 
-    const api = new ApiStack(this, "Api", {
+    const api = new ApiConstruct(this, "ApiConstruct", {
       envName,
-      auth,
+      userPool: auth.userPool,
       permissions,
       services,
     });
 
-    const monitor = new MonitorConstruct(this, "Monitor", {
-      envName,
+    // const events = new EventsConstruct(this, "EventsConstruct", {
+    //   envName,
+    // });
+
+    // Publish deals-ms public bindings at the stack level
+    const region = Aws.REGION;
+    new SsmPublicationConstruct(this, "DealsMsPublicBindings", {
+      basePath: `/super-deals/${envName}/deals-ms/public`,
+      values: {
+        region,
+      },
     });
 
     // Set up dependencies between constructs if needed

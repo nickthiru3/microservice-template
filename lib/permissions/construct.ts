@@ -2,11 +2,12 @@ import { Construct } from "constructs";
 import { PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
 import ResourceServerConstruct from "./resource-server/construct";
 import OAuthConstruct from "./oauth/construct";
-import IamConstruct from "../iam/construct";
-import StorageConstruct from "../storage/construct";
-import AuthConstruct from "../auth/construct";
+import IamConstruct from "#lib/iam/construct";
+import StorageConstruct from "#lib/storage/construct";
+import AuthConstruct from "#lib/auth/construct";
 
 interface PermissionsConstructProps {
+  readonly envName: string;
   readonly iam: IamConstruct;
   readonly storage: StorageConstruct;
   readonly auth: AuthConstruct;
@@ -17,20 +18,25 @@ interface PermissionsConstructProps {
  * Handles attaching policies to roles for accessing various resources
  */
 class PermissionsConstruct extends Construct {
-  public readonly oauth: OAuthConstruct;
+  readonly resourceServer: ResourceServerConstruct;
+  readonly oauth: OAuthConstruct;
 
   constructor(scope: Construct, id: string, props: PermissionsConstructProps) {
     super(scope, id);
 
-    const { iam, storage, auth } = props;
+    const { envName, iam, auth, storage } = props;
 
-    const resourceServer = new ResourceServerConstruct(this, "ResourceServer", {
-      userPool: auth.userPool,
-      envName: auth.envName,
-    });
+    const resourceServer = new ResourceServerConstruct(
+      this,
+      "ResourceServerConstruct",
+      {
+        auth,
+        envName,
+      }
+    );
 
-    // OAuth permissions integrated with existing UserPool
-    this.oauth = new OAuthConstruct(this, "OAuthPermissions", {
+    // OAuth permissions integrated with existing UserPool Resource Server wrapper
+    this.oauth = new OAuthConstruct(this, "OAuthConstruct", {
       resourceServer,
     });
 
@@ -42,7 +48,7 @@ class PermissionsConstruct extends Construct {
     });
 
     // Attach the policy only to the merchant role
-    iam.roles.merchant.addToPolicy(merchantS3Policy);
+    iam.roles.merchant.addToPrincipalPolicy(merchantS3Policy);
 
     // Future permissions can be added here
     // For example:

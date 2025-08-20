@@ -3,9 +3,9 @@ import { Construct } from "constructs";
 import {
   TableV2,
   AttributeType,
-  // StreamViewType,
+  StreamViewType,
 } from "aws-cdk-lib/aws-dynamodb";
-// import { databaseConfig, GSIConfig } from "#config/database";
+import { databaseConfig, GSIConfig } from "#config/database";
 
 /**
  * Properties for the DynamoDB construct
@@ -44,20 +44,20 @@ class DbConstruct extends Construct {
     const { envName, serviceName = "deals-ms" } = props;
 
     // Get database configuration from config file
-    // const {
-    //   gsis,
-    //   settings: {
-    //     enableStreams,
-    //     pitrRetentionDays,
-    //     useCustomerManagedEncryption,
-    //   },
-    // } = databaseConfig;
+    const {
+      gsis,
+      settings: {
+        enableStreams,
+        pitrRetentionDays,
+        useCustomerManagedEncryption,
+      },
+    } = databaseConfig;
 
     // Determine environment-specific defaults
     // Note: Using "staging" instead of "production" because production deployment
     // happens via manual approval in CodePipeline and doesn't re-synthesize CDK code
     const isStaging = envName === "staging";
-    // const shouldUseCMK = useCustomerManagedEncryption;
+    const shouldUseCMK = useCustomerManagedEncryption;
     const shouldProtectFromDeletion = isStaging;
 
     // Simplified approach: Use AWS defaults for encryption and logging
@@ -65,19 +65,19 @@ class DbConstruct extends Construct {
 
     // Build Global Secondary Indexes from configuration
     // Only create GSIs if they are defined in the config
-    // const globalSecondaryIndexes = gsis.map((gsi: GSIConfig) => ({
-    //   indexName: gsi.indexName,
-    //   partitionKey: {
-    //     name: gsi.partitionKey,
-    //     type: AttributeType.STRING,
-    //   },
-    //   ...(gsi.sortKey && {
-    //     sortKey: {
-    //       name: gsi.sortKey,
-    //       type: AttributeType.STRING,
-    //     },
-    //   }),
-    // }));
+    const globalSecondaryIndexes = gsis.map((gsi: GSIConfig) => ({
+      indexName: gsi.indexName,
+      partitionKey: {
+        name: gsi.partitionKey,
+        type: AttributeType.STRING,
+      },
+      ...(gsi.sortKey && {
+        sortKey: {
+          name: gsi.sortKey,
+          type: AttributeType.STRING,
+        },
+      }),
+    }));
 
     // Create the DynamoDB table
     this.table = new TableV2(this, "Table", {
@@ -95,21 +95,7 @@ class DbConstruct extends Construct {
       },
 
       // Global Secondary Indexes (only if configured)
-      // ...(globalSecondaryIndexes.length > 0 && { globalSecondaryIndexes }),
-
-      // globalSecondaryIndexes: [
-      //   {
-      //     indexName: "GSI1",
-      //     partitionKey: {
-      //       name: "GSI1PK",
-      //       type: AttributeType.STRING,
-      //     },
-      //     sortKey: {
-      //       name: "GSI1SK",
-      //       type: AttributeType.STRING,
-      //     },
-      //   },
-      // ],
+      ...(globalSecondaryIndexes.length > 0 && { globalSecondaryIndexes }),
 
       // Use default billing (pay-per-request) and encryption (AWS-owned keys)
       // Override via config/database.ts if needed
@@ -119,9 +105,9 @@ class DbConstruct extends Construct {
       pointInTimeRecovery: true,
 
       // Streams (optional)
-      // ...(enableStreams && {
-      //   dynamoStream: StreamViewType.NEW_AND_OLD_IMAGES,
-      // }),
+      ...(enableStreams && {
+        dynamoStream: StreamViewType.NEW_AND_OLD_IMAGES,
+      }),
 
       // Resource management
       removalPolicy: isStaging ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
@@ -144,23 +130,23 @@ class DbConstruct extends Construct {
   /**
    * Grant read permissions to a principal
    */
-  // public grantReadData(grantee: any): void {
-  //   this.table.grantReadData(grantee);
-  // }
+  public grantReadData(grantee: any): void {
+    this.table.grantReadData(grantee);
+  }
 
   /**
    * Grant write permissions to a principal
    */
-  // public grantWriteData(grantee: any): void {
-  //   this.table.grantWriteData(grantee);
-  // }
+  public grantWriteData(grantee: any): void {
+    this.table.grantWriteData(grantee);
+  }
 
   /**
    * Grant full permissions to a principal
    */
-  // public grantFullAccess(grantee: any): void {
-  //   this.table.grantFullAccess(grantee);
-  // }
+  public grantFullAccess(grantee: any): void {
+    this.table.grantFullAccess(grantee);
+  }
 }
 
 export default DbConstruct;

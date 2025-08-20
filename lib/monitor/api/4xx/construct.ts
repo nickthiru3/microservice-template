@@ -23,9 +23,9 @@ class Alarm4xxConstruct extends Construct {
         forceDockerBundling: true,
       },
       runtime: Runtime.NODEJS_20_X,
-      entry: join(__dirname, "#src/monitor/api/4xx/handler.ts"),
+      entry: join(__dirname, "../../../src/monitor/api/4xx/handler.ts"),
       handler: "handler",
-      depsLockFilePath: require.resolve("#package-lock"),
+      depsLockFilePath: join(__dirname, "../../../package-lock.json"),
     });
 
     const topic = new Topic(this, "Topic", {

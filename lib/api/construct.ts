@@ -1,26 +1,18 @@
-import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import {
-  RestApi,
-  EndpointType,
-  Cors,
-  CognitoUserPoolsAuthorizer,
-  AuthorizationType,
-  MethodLoggingLevel,
-} from "aws-cdk-lib/aws-apigateway";
+import { RestApi, EndpointType, Cors } from "aws-cdk-lib/aws-apigateway";
+import { IUserPool } from "aws-cdk-lib/aws-cognito";
 
 import StageConstruct from "./stage/construct";
 import EndpointsConstruct from "./endpoints/construct";
 import AuthorizationConstruct from "./authorization/construct";
-// import AuthStack from "../auth/construct";
-import PermissionsStack from "../permissions/construct";
-import ServicesStack from "../services/construct";
+import PermissionsConstruct from "../permissions/construct";
+import ServicesConstruct from "../services/construct";
 
 interface ApiConstructProps {
   envName: string;
-  auth: AuthStack;
-  permissions: PermissionsStack;
-  services: ServicesStack;
+  userPool: IUserPool;
+  permissions: PermissionsConstruct;
+  services: ServicesConstruct;
 }
 
 /**
@@ -31,9 +23,9 @@ class ApiConstruct extends Construct {
   restApi: RestApi;
 
   constructor(scope: Construct, id: string, props: ApiConstructProps) {
-    super(scope, id, props);
+    super(scope, id);
 
-    const { envName, auth, permissions, services } = props;
+    const { envName, userPool, permissions, services } = props;
 
     /*** HTTP API ***/
 
@@ -54,7 +46,7 @@ class ApiConstruct extends Construct {
     /*** Authorization ***/
     const authorization = new AuthorizationConstruct(this, "Authorization", {
       restApi: this.restApi,
-      auth,
+      userPool,
       permissions,
     });
 

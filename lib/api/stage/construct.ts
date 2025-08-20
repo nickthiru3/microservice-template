@@ -8,6 +8,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnOutput } from "aws-cdk-lib";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
 
 interface StageConstructProps {
@@ -50,17 +51,15 @@ class StageConstruct extends Construct {
         status: true,
         user: true,
       }),
-      methodSettings: [
-        {
+      methodOptions: {
+        "/*/*": {
           loggingLevel: MethodLoggingLevel.INFO,
           dataTraceEnabled: true,
           metricsEnabled: true,
-          resourcePath: "/*",
-          httpMethod: "*",
           throttlingBurstLimit: 10,
           throttlingRateLimit: 5,
         },
-      ],
+      },
     });
 
     // Set the default deployment stage
@@ -73,6 +72,13 @@ class StageConstruct extends Construct {
       value: stage.urlForPath(),
       exportName: `RestApiUrl${stageName}`,
     }).overrideLogicalId(`RestApiUrl${stageName}`);
+
+    // Publish API base URL to SSM for service discovery
+    const basePath = `/super-deals/${stageName}/deals-ms/public`;
+    new StringParameter(this, `ParamApiBaseUrl-${stageName}`, {
+      parameterName: `${basePath}/api/baseUrl`,
+      stringValue: stage.urlForPath(),
+    });
   }
 }
 

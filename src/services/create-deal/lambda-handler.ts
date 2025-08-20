@@ -1,22 +1,22 @@
-const { DynamoDBClient, PutItemCommand } = require("@aws-sdk/client-dynamodb");
-const { marshall } = require("@aws-sdk/util-dynamodb");
-const KSUID = require("ksuid");
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { marshall } from "@aws-sdk/util-dynamodb";
+import KSUID from "ksuid";
 
 /** @typedef {import('#types/deal-entity').DealEntity} DealItem */
 
 // Api object provides internal API-related helper functionality
 // such as standardized success and error responses
-const Api = require("#src/api/_index.js");
+import Api from "#src/helpers/api/_index.js";
 
 // Initialize AWS clients
 const ddbClient = new DynamoDBClient();
 
-exports.handler = async (event) => {
+export const handler = async (event: any) => {
   console.log("Received event:", JSON.stringify(event, null, 2));
 
   // const stage = event.headers['X-Stage'] || 'dev';
 
-  data = JSON.parse(event.body);
+  const data = JSON.parse(event.body);
 
   // !!!!! VALIDATE expiration VALUE !!!!!
   // try {
@@ -37,18 +37,16 @@ exports.handler = async (event) => {
   // Return success response
   const successResponse = Api.success({
     message: "Deal successfully created",
-    dealId: dealId,
+    dealId: data.dealId,
   });
   console.log(`Success Response: ${JSON.stringify(successResponse, null, 2)}`);
   return successResponse;
 };
 
-
-
 /**
  * Save the deal to DynamoDB
- * @param {Object} deal - The deal data
- * @param {string} dbTableName - The DynamoDB table name
+ * @param {Object} data - The deal data
+ * @param {string} tableName - The DynamoDB table name
  * @returns {Object} Save result
  */
 async function saveDealToDynamoDB(data, tableName) {
@@ -59,10 +57,10 @@ async function saveDealToDynamoDB(data, tableName) {
     EntityType: "Deal",
     Id: data.dealId,
     Title: data.title,
-    OriginalPrice: parseFloat(deal.originalPrice),
-    Discount: parseFloat(deal.discount),
-    Category: deal.category,
-    Expiration: deal.expiration,
+    OriginalPrice: parseFloat(data.originalPrice),
+    Discount: parseFloat(data.discount),
+    Category: data.category,
+    Expiration: data.expiration,
     MerchantId: data.userId,
     LogoFileKey: data.logoFileKey,
     CreatedAt: new Date().toISOString(),
@@ -70,7 +68,7 @@ async function saveDealToDynamoDB(data, tableName) {
   console.log("dealItem: " + JSON.stringify(dealItem, null, 2));
 
   try {
-    console.log("(+) Saving deal to DynamoDB...")
+    console.log("(+) Saving deal to DynamoDB...");
     await ddbClient.send(
       new PutItemCommand({
         TableName: tableName,
@@ -79,7 +77,6 @@ async function saveDealToDynamoDB(data, tableName) {
     );
 
     return { success: true };
-
   } catch (error) {
     console.error("DynamoDB Error:", error);
     return { success: false, error: "Error saving deal: " + error.message };
