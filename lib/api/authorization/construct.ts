@@ -1,12 +1,24 @@
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { IUserPool } from "aws-cdk-lib/aws-cognito";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import { RestApi, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 import PermissionsConstruct from "../../permissions/construct";
+import AuthBindingsConstruct from "../../auth/construct";
+
+interface AuthOptions {
+  authorizationType: AuthorizationType;
+  authorizer: { authorizerId: string };
+  authorizationScopes: string[];
+}
+
+interface DealsAuthOptions {
+  readDealsAuth: AuthOptions;
+  writeDealsAuth: AuthOptions;
+  deleteDealsAuth: AuthOptions;
+}
 
 interface AuthorizationConstructProps {
   readonly restApi: RestApi;
-  readonly userPool: IUserPool;
+  readonly auth: AuthBindingsConstruct;
   readonly permissions: PermissionsConstruct;
 }
 
@@ -17,11 +29,7 @@ interface AuthorizationConstructProps {
 class AuthorizationConstruct extends Construct {
   authorizer: CognitoUserPoolsAuthorizer;
   authOptions: {
-    deals: {
-      readDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
-      writeDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
-      deleteDealsAuth: { authorizationType: string; authorizer: { authorizerId: string }; authorizationScopes: string[] };
-    };
+    deals: DealsAuthOptions;
   };
 
   constructor(
@@ -31,14 +39,14 @@ class AuthorizationConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { restApi, userPool, permissions } = props;
+    const { restApi, auth, permissions } = props;
 
     // Create and attach Cognito authorizer
     this.authorizer = new CognitoUserPoolsAuthorizer(
       this,
       "CognitoUserPoolsAuthorizer",
       {
-        cognitoUserPools: [userPool],
+        cognitoUserPools: [auth.userPool],
         identitySource: "method.request.header.Authorization",
       }
     );
@@ -46,7 +54,9 @@ class AuthorizationConstruct extends Construct {
 
     // Get authorization options for different services
     this.authOptions = {
-      deals: permissions.oauth.getAuthOptions(this.authorizer.authorizerId),
+      deals: permissions.oauth.getAuthOptions(
+        this.authorizer.authorizerId
+      ) as DealsAuthOptions,
       // Add more service auth options here as needed
     };
   }

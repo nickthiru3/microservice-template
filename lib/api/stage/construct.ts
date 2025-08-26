@@ -10,9 +10,10 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnOutput } from "aws-cdk-lib";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import { buildSsmPublicPath } from "#src/helpers/ssm";
 
 interface StageConstructProps {
-  readonly api: RestApi;
+  readonly restApi: RestApi;
   readonly stageName: string;
 }
 
@@ -20,10 +21,10 @@ class StageConstruct extends Construct {
   constructor(scope: Construct, id: string, props: StageConstructProps) {
     super(scope, id);
 
-    const { api, stageName } = props;
+    const { restApi, stageName } = props;
 
     const accessLogGroup = new LogGroup(this, `LogGroup-${stageName}`, {
-      logGroupName: `/aws/apigateway/${api.restApiId}/${stageName}`,
+      logGroupName: `/aws/apigateway/${restApi.restApiId}/${stageName}`,
       retention: RetentionDays.ONE_WEEK,
     });
 
@@ -33,7 +34,7 @@ class StageConstruct extends Construct {
     // });
 
     const deployment = new Deployment(this, `Deployment-${stageName}`, {
-      api,
+      api: restApi,
     });
 
     const stage = new Stage(this, `Stage-${stageName}`, {
@@ -64,7 +65,7 @@ class StageConstruct extends Construct {
 
     // Set the default deployment stage
     if (stageName === "dev") {
-      api.deploymentStage = stage;
+      restApi.deploymentStage = stage;
     }
 
     // Output the stage-specific URL with custom LogicalId (in outputs.json)
@@ -74,7 +75,7 @@ class StageConstruct extends Construct {
     }).overrideLogicalId(`RestApiUrl${stageName}`);
 
     // Publish API base URL to SSM for service discovery
-    const basePath = `/super-deals/${stageName}/deals-ms/public`;
+    const basePath = buildSsmPublicPath(stageName);
     new StringParameter(this, `ParamApiBaseUrl-${stageName}`, {
       parameterName: `${basePath}/api/baseUrl`,
       stringValue: stage.urlForPath(),

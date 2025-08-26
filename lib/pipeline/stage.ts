@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib";
-import { Config } from "../../types";
+import { Stage, StageProps, Environment } from "aws-cdk-lib";
+import type { Config } from "#config/default";
 
 // Import your constructs
 // import DbStack from "../db/stack";
@@ -12,7 +12,7 @@ import { ServiceStack } from "../service-stack";
 /**
  * Properties for the PipelineStage
  */
-export interface PipelineStageProps extends cdk.StageProps {
+export interface PipelineStageProps extends StageProps {
   /**
    * The name of the environment (e.g., 'dev', 'staging', 'prod')
    */
@@ -21,10 +21,9 @@ export interface PipelineStageProps extends cdk.StageProps {
   /**
    * The target deployment environment (account/region)
    */
-  readonly env: cdk.Environment;
-
+  readonly env: Environment;
   /**
-   * Configuration object for the environment
+   * Fully-resolved configuration for this deployment run
    */
   readonly config: Config;
 }
@@ -32,7 +31,7 @@ export interface PipelineStageProps extends cdk.StageProps {
 /**
  * Pipeline stage that represents a deployment environment
  */
-export class PipelineStage extends cdk.Stage {
+export class PipelineStage extends Stage {
   // Public properties that can be accessed by the pipeline
   public readonly apiUrl?: string;
 
@@ -44,6 +43,7 @@ export class PipelineStage extends cdk.Stage {
     new ServiceStack(this, "ServiceStack", {
       envName,
       env,
+      config,
     });
   }
 }

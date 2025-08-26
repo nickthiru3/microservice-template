@@ -1,10 +1,8 @@
-import { defaultConfig } from './default';
+import type { Config } from './default';
 
-const productionConfig = {
-  ...defaultConfig,
+const productionConfig: Partial<Config> = {
   envName: 'production',
   // Add production-specific overrides here
 };
 
-export const config = productionConfig;
-export default config;
+export default productionConfig;

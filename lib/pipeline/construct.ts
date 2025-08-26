@@ -1,44 +1,66 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib";
-import * as pipelines from "aws-cdk-lib/pipelines";
-import * as codebuild from "aws-cdk-lib/aws-codebuild";
-import * as iam from "aws-cdk-lib/aws-iam";
-import { PipelineConfig, PipelineConstructProps } from "../../types/pipeline";
+import { Environment, Aws } from "aws-cdk-lib";
+import {
+  CodeBuildStep,
+  CodePipeline,
+  CodePipelineSource,
+  ManualApprovalStep,
+  type AddStageOpts,
+} from "aws-cdk-lib/pipelines";
+import { LinuxBuildImage } from "aws-cdk-lib/aws-codebuild";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import PipelineStage from "./stage";
+import type { Config } from "#config/default";
 
 /**
  * Pipeline construct that sets up a CI/CD pipeline using AWS CodePipeline
  */
+// Local props type colocated with construct, using Config as the source of truth
+interface PipelineConstructProps {
+  readonly envName: string;
+  readonly env: Environment;
+  readonly config: Config & {
+    stages?: Record<
+      string,
+      { enabled?: boolean; account?: string; region?: string }
+    >;
+  };
+  readonly gitHubRepo?: string;
+  readonly gitHubBranch?: string;
+}
+
 export class PipelineConstruct extends Construct {
   constructor(scope: Construct, id: string, props: PipelineConstructProps) {
     super(scope, id);
 
     const { envName, env, config } = props;
-    const pipelineConfig = config as PipelineConfig;
+    const cfg = config;
 
     // GitHub configuration with fallbacks to config values
     const gitHubRepo =
       props.gitHubRepo ??
-      config.gitHubRepo ??
+      cfg.github?.repo ??
+      cfg.gitHubRepo ??
       "nickthiru3/super-deals-deals-ms";
-    const gitHubBranch = props.gitHubBranch ?? config.gitHubBranch ?? "main";
+    const gitHubBranch =
+      props.gitHubBranch ?? cfg.github?.branch ?? cfg.gitHubBranch ?? "main";
 
     // Note: GitHub token secret is not needed when using CodeStar connections
     // CodeStar connections handle OAuth authentication automatically
 
     // Create the pipeline
-    const pipeline = new pipelines.CodePipeline(this, "Pipeline", {
+    const pipeline = new CodePipeline(this, "Pipeline", {
       pipelineName: `super-deals-deals-ms-${envName}-pipeline`,
       crossAccountKeys: false,
-      synth: new pipelines.CodeBuildStep("Synth", {
-        input: pipelines.CodePipelineSource.connection(
-          gitHubRepo,
-          gitHubBranch,
-          {
-            connectionArn: `arn:aws:codestar-connections:${env.region}:${env.account}:connection/${config.codestarConnectionId}`,
-            triggerOnPush: false,
-          }
-        ),
+      synth: new CodeBuildStep("Synth", {
+        input: CodePipelineSource.connection(gitHubRepo, gitHubBranch, {
+          connectionArn: `arn:aws:codestar-connections:${cfg.region || env.region}:${
+            cfg.account || env.account
+          }:connection/${
+            cfg.github?.codestarConnectionId ?? cfg.codestarConnectionId
+          }`,
+          triggerOnPush: false,
+        }),
         installCommands: [
           "echo 'Node.js version:' && node --version",
           "echo 'npm version:' && npm --version",
@@ -56,7 +78,7 @@ export class PipelineConstruct extends Construct {
         },
         primaryOutputDirectory: "cdk.out",
         rolePolicyStatements: [
-          new iam.PolicyStatement({
+          new PolicyStatement({
             actions: ["sts:AssumeRole"],
             resources: ["*"],
             conditions: {
@@ -73,7 +95,7 @@ export class PipelineConstruct extends Construct {
       }),
       codeBuildDefaults: {
         buildEnvironment: {
-          buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+          buildImage: LinuxBuildImage.STANDARD_7_0,
           privileged: true, // Required for building Docker images if needed
           environmentVariables: {
             NODE_VERSION: {
@@ -85,34 +107,33 @@ export class PipelineConstruct extends Construct {
     });
 
     // Add stages based on environment configuration
-    if (pipelineConfig.stages) {
-      for (const [stageName, stageConfig] of Object.entries(
-        pipelineConfig.stages
-      )) {
+    if (cfg.stages) {
+      for (const [stageName, stageConfig] of Object.entries(cfg.stages)) {
         // Only create stages that are enabled in the config (default to true if not specified)
         if (stageConfig?.enabled !== false) {
-          const stageEnv: cdk.Environment = {
-            account: stageConfig?.account || env.account || cdk.Aws.ACCOUNT_ID,
-            region: stageConfig?.region || env.region || cdk.Aws.REGION,
+          const stageEnv: Environment = {
+            account:
+              stageConfig?.account ||
+              cfg.account ||
+              env.account ||
+              Aws.ACCOUNT_ID,
+            region:
+              stageConfig?.region || cfg.region || env.region || Aws.REGION,
           };
 
           // Create the stage with merged config
           const stage = new PipelineStage(this, `${stageName}Stage`, {
             envName: stageName,
             env: stageEnv,
-            config: {
-              ...pipelineConfig,
-              ...stageConfig,
-              envName: stageName,
-            },
+            config: cfg,
           });
 
           // Set up stage options
-          const stageOptions: pipelines.AddStageOpts = {
+          const stageOptions: AddStageOpts = {
             // Add manual approval for production stages
             pre:
               stageName === "production" || stageName === "prod"
-                ? [new pipelines.ManualApprovalStep("PromoteToProduction")]
+                ? [new ManualApprovalStep("PromoteToProduction")]
                 : undefined,
           };
 
@@ -125,10 +146,10 @@ export class PipelineConstruct extends Construct {
       const stage = new PipelineStage(this, `${envName}Stage`, {
         envName,
         env: {
-          account: env.account || cdk.Aws.ACCOUNT_ID,
-          region: env.region || cdk.Aws.REGION,
+          account: cfg.account || env.account || Aws.ACCOUNT_ID,
+          region: cfg.region || env.region || Aws.REGION,
         },
-        config: pipelineConfig,
+        config: cfg,
       });
 
       pipeline.addStage(stage);
@@ -137,7 +158,7 @@ export class PipelineConstruct extends Construct {
     // Add pre-synth validation steps
     pipeline.addWave("PreSynth", {
       pre: [
-        new pipelines.CodeBuildStep("RunUnitTests", {
+        new CodeBuildStep("RunUnitTests", {
           commands: ["npm ci", "npm test"],
         }),
       ],

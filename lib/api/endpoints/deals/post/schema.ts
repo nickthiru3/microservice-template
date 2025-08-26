@@ -16,7 +16,6 @@ const schema: JsonSchema = {
   type: JsonSchemaType.OBJECT,
   required: [
     "userId",
-    "dealId",
     "title",
     "originalPrice",
     "discount",
@@ -26,10 +25,9 @@ const schema: JsonSchema = {
   ],
   properties: {
     userId: { type: JsonSchemaType.STRING, minLength: 1 },
-    dealId: { type: JsonSchemaType.STRING, minLength: 1 },
     title: { type: JsonSchemaType.STRING, minLength: 1, maxLength: 255 },
     originalPrice: { type: JsonSchemaType.NUMBER, minimum: 1 },
-    discount: { type: JsonSchemaType.NUMBER, minimum: 1, maximum: 100 },
+    discount: { type: JsonSchemaType.NUMBER, minimum: 0, maximum: 100 },
     logoFileKey: { type: JsonSchemaType.STRING, minLength: 1 },
     category: { type: JsonSchemaType.STRING, enum: categoryEnum },
     // ISO 8601 date-time preferred for API payloads

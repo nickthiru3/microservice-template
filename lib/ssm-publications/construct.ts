@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { StringParameter, ParameterTier, ParameterType } from "aws-cdk-lib/aws-ssm";
+import { StringParameter, ParameterTier } from "aws-cdk-lib/aws-ssm";
 
 interface SsmPublicationConstructProps {
   readonly basePath: string;
@@ -19,7 +19,6 @@ class SsmPublicationConstruct extends Construct {
         parameterName: name,
         stringValue: value ?? "",
         tier: ParameterTier.STANDARD,
-        type: ParameterType.STRING,
       });
     });
   }

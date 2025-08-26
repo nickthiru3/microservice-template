@@ -1,9 +1,10 @@
 import { Construct } from "constructs";
-import ServicesConstruct from "../../../services/construct";
 import PostConstruct from "./post/construct";
+import ServicesConstruct from "#lib/services/construct";
+import type { ApiProps } from "#lib/api/types";
 
 interface DealsConstructProps {
-  readonly http: any;
+  readonly api: ApiProps;
   readonly services: ServicesConstruct;
 }
 
@@ -11,15 +12,15 @@ class DealsConstruct extends Construct {
   constructor(scope: Construct, id: string, props: DealsConstructProps) {
     super(scope, id);
 
-    const { http, services } = props;
+    const { api, services } = props;
 
-    const dealsResource = http.restApi.root.addResource(
+    const dealsResource = api.restApi.root.addResource(
       "deals",
-      http.optionsWithCors
+      api.optionsWithCors
     );
 
     new PostConstruct(this, "PostConstruct", {
-      http,
+      api,
       services,
       dealsResource,
     });

@@ -1,8 +1,8 @@
 import { Construct } from "constructs";
 import { IUserPool, UserPool } from "aws-cdk-lib/aws-cognito";
 import { z } from "zod";
+import { getBasePath, readParamRequired } from "#src/helpers/ssm";
 import type { AuthBindings } from "@super-deals/infra-contracts";
-import { getBasePath, readParamRequired } from "#src/helpers/ssm/_index";
 import { Aws } from "aws-cdk-lib";
 
 interface AuthBindingsConstructProps {

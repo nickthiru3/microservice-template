@@ -1,30 +1,31 @@
 import { Construct } from "constructs";
 import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import { Model, RequestValidator } from "aws-cdk-lib/aws-apigateway";
-import ServicesConstruct from "../../../../services/construct";
+import { Model, RequestValidator, IResource } from "aws-cdk-lib/aws-apigateway";
+import ServicesConstruct from "#lib/services/construct";
+import type { ApiProps } from "#lib/api/types";
 
 import schema from "./schema";
 interface PostConstructProps {
-  readonly http: any;
+  readonly api: ApiProps;
   readonly services: ServicesConstruct;
-  readonly dealsResource: any;
+  readonly dealsResource: IResource;
 }
 
 class PostConstruct extends Construct {
   constructor(scope: Construct, id: string, props: PostConstructProps) {
     super(scope, id);
 
-    const { http, services, dealsResource } = props;
+    const { api, services, dealsResource } = props;
 
     const model = new Model(this, `Model`, {
-      restApi: http.restApi,
+      restApi: api.restApi,
       contentType: "application/json",
       description: "Validation model for create deals form",
       schema,
     });
 
     const requestValidator = new RequestValidator(this, `RequestValidator`, {
-      restApi: http.restApi,
+      restApi: api.restApi,
       validateRequestBody: true,
       validateRequestParameters: false,
     });
@@ -38,7 +39,7 @@ class PostConstruct extends Construct {
         requestModels: {
           "application/json": model,
         },
-        ...http.optionsWithAuth.writeDealsAuth, // Use write scope for deal creation
+        ...api.optionsWithAuth.deals.writeDealsAuth, // Use write scope for deal creation
       }
     );
   }

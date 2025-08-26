@@ -1,27 +1,29 @@
-import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { SuperDealsStackProps } from "../types";
+import { Stack, StackProps } from "aws-cdk-lib";
 import PipelineConstruct from "./pipeline/construct";
-import { PipelineConfig } from "../types/pipeline";
-import config from "../config/default";
+import type { Config } from "#config/default";
 
-export class CicdStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: SuperDealsStackProps) {
+/**
+ * Note on env vs config:
+ * - This props interface extends CDK's StackProps, so `env` (account/region) is available implicitly.
+ * - We pass `env` when creating the Stack so CDK binds this stack to a specific account/region (bootstrap/assets/lookups).
+ * - Internally we prefer values from `config` (single source of truth) and warn if they drift from `props.env`.
+ */
+interface CicdStackProps extends StackProps {
+  envName: string;
+  config: Config;
+}
+
+export class CicdStack extends Stack {
+  constructor(scope: Construct, id: string, props: CicdStackProps) {
     super(scope, id, props);
 
-    const { envName, env } = props;
-
-    // In Three-Flow architecture, account and region are required for all environments
-    // Use explicit values from config (which enforces required values) or environment props
-    const pipelineEnv = {
-      account: env?.account || config.account,
-      region: env?.region || config.region,
-    };
+    const { envName, env, config } = props;
 
     new PipelineConstruct(this, "PipelineStack", {
       envName,
-      env: pipelineEnv,
-      config: config as PipelineConfig,
+      env: env!,
+      config,
     });
   }
 }

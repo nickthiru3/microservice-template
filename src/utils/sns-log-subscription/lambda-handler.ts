@@ -1,10 +1,9 @@
+import type { SNSEvent } from "aws-lambda";
+
 /**
  * Lambda handler for logging SNS messages to CloudWatch Logs
- *
- * @param {Object} event - The SNS event
- * @returns {Object} Response object
  */
-exports.handler = async (event) => {
+export const handler = async (event: SNSEvent) => {
   try {
     // Extract messages from SNS event
     const records = event.Records || [];

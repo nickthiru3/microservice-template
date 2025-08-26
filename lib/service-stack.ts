@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { Stack, StackProps, Aws } from "aws-cdk-lib";
+import { Stack, StackProps } from "aws-cdk-lib";
 import MonitorConstruct from "./monitor/construct";
 import DbConstruct from "./db/construct";
 import StorageConstruct from "./storage/construct";
@@ -10,9 +10,20 @@ import ApiConstruct from "./api/construct";
 import AuthBindingsConstruct from "./auth/construct";
 import IamBindingsConstruct from "./iam/construct";
 import SsmPublicationConstruct from "./ssm-publications/construct";
+import { buildSsmPublicPath } from "#src/helpers/ssm";
+import type { Config } from "#config/default";
+
+/**
+ * Note on env vs config:
+ * - This props interface extends CDK's StackProps, so `env` (account/region) is available implicitly.
+ * - We pass `env` when instantiating the Stack so CDK knows the deploy target (bootstrap, asset roles, lookups).
+ * - Inside the stack/constructs, we treat `config` as the single source of truth for account/region/envName.
+ *   Therefore, we reference `config.region` etc. for internal wiring, and only rely on `props.env` for CDK targeting.
+ */
 
 interface ServiceStackProps extends StackProps {
   envName: string;
+  config: Config;
 }
 
 /**
@@ -25,16 +36,17 @@ export class ServiceStack extends Stack {
   constructor(scope: Construct, id: string, props: ServiceStackProps) {
     super(scope, id, props);
 
-    const { envName } = props;
+    const { envName, config } = props;
+    // Use region from config for internal wiring. props.env is still required by CDK for targeting.
+    const region = config.region;
 
-    const monitor = new MonitorConstruct(this, "MonitorConstruct", {
+    new MonitorConstruct(this, "MonitorConstruct", {
       envName,
     });
 
-    // Database construct with configuration from config/database.ts
     const db = new DbConstruct(this, "DatabaseConstruct", {
       envName,
-      serviceName: "deals-ms",
+      serviceName: config.service.name,
     });
 
     const storage = new StorageConstruct(this, "StorageConstruct", {
@@ -59,11 +71,12 @@ export class ServiceStack extends Stack {
     const services = new ServicesConstruct(this, "ServicesConstruct", {
       envName,
       db,
+      region,
     });
 
-    const api = new ApiConstruct(this, "ApiConstruct", {
+    new ApiConstruct(this, "ApiConstruct", {
       envName,
-      userPool: auth.userPool,
+      auth,
       permissions,
       services,
     });
@@ -72,10 +85,9 @@ export class ServiceStack extends Stack {
     //   envName,
     // });
 
-    // Publish deals-ms public bindings at the stack level
-    const region = Aws.REGION;
-    new SsmPublicationConstruct(this, "DealsMsPublicBindings", {
-      basePath: `/super-deals/${envName}/deals-ms/public`,
+    // Publish public bindings at the stack level
+    new SsmPublicationConstruct(this, "ServicePublicBindings", {
+      basePath: buildSsmPublicPath(envName, config.service.name),
       values: {
         region,
       },

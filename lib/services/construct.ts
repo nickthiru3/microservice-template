@@ -2,10 +2,12 @@ import { Construct } from "constructs";
 import CreateDealConstruct from "./create-deal/construct";
 import ServicesDiscoveryConstruct from "./services-discovery/construct";
 import DbConstruct from "#lib/db/construct";
+import { buildSsmPublicPath } from "#src/helpers/ssm";
 
 interface ServicesConstructProps {
   readonly envName: string;
   readonly db: DbConstruct;
+  readonly region: string;
 }
 
 class ServicesConstruct extends Construct {
@@ -15,7 +17,10 @@ class ServicesConstruct extends Construct {
   constructor(scope: Construct, id: string, props: ServicesConstructProps) {
     super(scope, id);
 
-    const { envName, db } = props;
+    const { envName, db, region } = props;
+
+    // Build standardized SSM public path via helper
+    const ssmPublicPath = buildSsmPublicPath(envName);
 
     this.createDeal = new CreateDealConstruct(this, "CreateDealConstruct", {
       db,
@@ -26,7 +31,8 @@ class ServicesConstruct extends Construct {
       "ServicesDiscoveryConstruct",
       {
         envName,
-        ssmPublicPath: `/super-deals/${envName}/deals-ms/public`,
+        ssmPublicPath,
+        region,
       }
     );
   }

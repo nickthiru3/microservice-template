@@ -43,9 +43,6 @@
     "#test/*": [
       "./test/*"
     ],
-    "#types/*": [
-      "./types/*"
-    ],
     "#package-lock": [
       "./package-lock.json"
     ]

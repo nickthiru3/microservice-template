@@ -25,10 +25,9 @@
       "#src/*": ["./src/*"],
       "#lib/*": ["./lib/*"],
       "#test/*": ["./test/*"],
-      "#types/*": ["./types/*"],
       "#package-lock": ["./package-lock.json"]
     }
   },
-  "include": ["src/**/*", "lib/**/*", "types"],
-  "exclude": ["node_modules", "cdk.out"]
+  "include": ["src/**/*", "lib/**/*", "bin/**/*", "config/**/*", "types/**/*"],
+  "exclude": ["node_modules", "cdk.out", "lib/db/construct copy.ts"]
 }

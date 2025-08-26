@@ -1,5 +1,6 @@
 import { Construct } from "constructs";
 import ResourceServerConstruct from "../resource-server/construct";
+import { AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 
 interface OAuthConstructProps {
   readonly resourceServer: ResourceServerConstruct;
@@ -22,7 +23,7 @@ class OAuthConstruct extends Construct {
   getAuthOptions(authorizerId: string) {
     const slashScopes = this.resourceServer.getOAuthScopes();
     const baseAuth = {
-      authorizationType: "COGNITO_USER_POOLS",
+      authorizationType: AuthorizationType.COGNITO,
       authorizer: { authorizerId },
     };
 

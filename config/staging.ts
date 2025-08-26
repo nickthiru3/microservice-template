@@ -1,10 +1,8 @@
-import { defaultConfig } from './default';
+import type { Config } from './default';
 
-const stagingConfig = {
-  ...defaultConfig,
+const stagingConfig: Partial<Config> = {
   envName: 'staging',
   // Add staging-specific overrides here
 };
 
-export const config = stagingConfig;
-export default config;
+export default stagingConfig;

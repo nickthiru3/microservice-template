@@ -1,8 +1,12 @@
 import { Construct } from "constructs";
 import { Role, IRole } from "aws-cdk-lib/aws-iam";
 import { z } from "zod";
+import {
+  getBasePath,
+  readParamOptional,
+  readParamRequired,
+} from "#src/helpers/ssm";
 import type { IamBindings } from "@super-deals/infra-contracts";
-import { getBasePath, readParamOptional, readParamRequired } from "#src/helpers/ssm/_index";
 
 interface IamBindingsConstructProps {
   readonly envName: string;
@@ -20,9 +24,18 @@ class IamBindingsConstruct extends Construct {
 
     const { envName } = props;
     const basePath = getBasePath(envName);
-    const merchantRoleArn = readParamRequired(this, `${basePath}/iam/roles/merchant/arn`);
-    const authenticatedRoleArn = readParamOptional(this, `${basePath}/iam/roles/authenticated/arn`);
-    const unauthenticatedRoleArn = readParamOptional(this, `${basePath}/iam/roles/unauthenticated/arn`);
+    const merchantRoleArn = readParamRequired(
+      this,
+      `${basePath}/iam/roles/merchant/arn`
+    );
+    const authenticatedRoleArn = readParamOptional(
+      this,
+      `${basePath}/iam/roles/authenticated/arn`
+    );
+    const unauthenticatedRoleArn = readParamOptional(
+      this,
+      `${basePath}/iam/roles/unauthenticated/arn`
+    );
 
     // Validate bindings
     const IamBindingsSchema = z.object({
@@ -37,7 +50,11 @@ class IamBindingsConstruct extends Construct {
     });
 
     this.roles = {
-      merchant: Role.fromRoleArn(this, "ImportedMerchantRole", iamB.merchantRoleArn),
+      merchant: Role.fromRoleArn(
+        this,
+        "ImportedMerchantRole",
+        iamB.merchantRoleArn
+      ),
       ...(iamB.authenticatedRoleArn && {
         authenticated: Role.fromRoleArn(
           this,

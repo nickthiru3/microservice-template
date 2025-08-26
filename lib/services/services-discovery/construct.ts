@@ -7,13 +7,17 @@ import path from "path";
 interface ServicesDiscoveryConstructProps {
   readonly envName: string;
   readonly ssmPublicPath?: string;
-  readonly region?: string;
+  readonly region: string;
 }
 
 class ServicesDiscoveryConstruct extends Construct {
   lambda: NodejsFunction;
 
-  constructor(scope: Construct, id: string, props: ServicesDiscoveryConstructProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: ServicesDiscoveryConstructProps
+  ) {
     super(scope, id);
 
     const { envName, ssmPublicPath, region } = props;
@@ -26,22 +30,20 @@ class ServicesDiscoveryConstruct extends Construct {
       runtime: Runtime.NODEJS_20_X,
       entry: path.join(
         __dirname,
-        "../../../src/services/services-discovery/lambda-handler.ts"
+        "#src/services/services-discovery/lambda-handler.ts"
       ),
       handler: "handler",
       depsLockFilePath: require.resolve("#package-lock"),
       environment: {
         ENV_NAME: envName,
-        AWS_REGION: region ?? process.env.AWS_REGION ?? "",
+        AWS_REGION: region,
         SSM_PUBLIC_PATH: ssmPublicPath ?? "",
       },
       initialPolicy: [
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ["ssm:GetParametersByPath"],
-          resources: [
-            `arn:aws:ssm:*:*:parameter${ssmPublicPath ?? ''}*`,
-          ],
+          resources: [`arn:aws:ssm:*:*:parameter${ssmPublicPath ?? ""}*`],
         }),
       ],
     });
