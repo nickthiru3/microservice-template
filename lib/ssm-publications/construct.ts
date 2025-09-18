@@ -1,13 +1,17 @@
 import { Construct } from "constructs";
 import { StringParameter, ParameterTier } from "aws-cdk-lib/aws-ssm";
 
-interface SsmPublicationConstructProps {
+interface ISsmPublicationsConstructProps {
   readonly basePath: string;
   readonly values: Record<string, string>;
 }
 
-class SsmPublicationConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: SsmPublicationConstructProps) {
+class SsmPublicationsConstruct extends Construct {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: ISsmPublicationsConstructProps
+  ) {
     super(scope, id);
 
     const { basePath, values } = props;
@@ -24,4 +28,4 @@ class SsmPublicationConstruct extends Construct {
   }
 }
 
-export default SsmPublicationConstruct;
+export default SsmPublicationsConstruct;

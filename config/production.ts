@@ -1,7 +1,7 @@
-import type { Config } from './default';
+import type { IConfig } from "./default";
 
-const productionConfig: Partial<Config> = {
-  envName: 'production',
+const productionConfig: Partial<IConfig> = {
+  envName: "production",
   // Add production-specific overrides here
 };
 

@@ -7,9 +7,9 @@ import localstackConfig from "./localstack";
 import stagingConfig from "./staging";
 import productionConfig from "./production";
 
-export interface Config {
+export interface IConfig {
   envName: string;
-  account: string;
+  accountId: string;
   region: string;
 
   // Service metadata
@@ -54,6 +54,11 @@ export interface Config {
     apiPrefix: string;
   };
 
+  // Feature toggles
+  features?: {
+    permissionsEnabled: boolean;
+  };
+
   // Development-specific settings
   development?: {
     enableDebugLogs?: boolean;
@@ -73,7 +78,7 @@ export interface Config {
 const ConfigSchema = z
   .object({
     envName: z.string().min(1),
-    account: z.string().min(1),
+    accountId: z.string().min(1),
     region: z.string().min(1),
     service: z.object({
       name: z.string().min(1),
@@ -146,6 +151,11 @@ const ConfigSchema = z
       functionPrefix: z.string().min(1),
       apiPrefix: z.string().min(1),
     }),
+    features: z
+      .object({
+        permissionsEnabled: z.boolean(),
+      })
+      .optional(),
     development: z
       .object({
         enableDebugLogs: z.boolean().optional(),
@@ -160,13 +170,10 @@ const ConfigSchema = z
     codestarConnectionId: z.string().min(1).optional(),
     parameterStorePrefix: z.string().min(1).optional(),
   })
-  .refine(
-    (cfg) => cfg.envName === "local" || !!cfg.github?.repo,
-    {
-      path: ["github", "repo"],
-      message: "github.repo is required for non-local environments",
-    }
-  )
+  .refine((cfg) => cfg.envName === "local" || !!cfg.github?.repo, {
+    path: ["github", "repo"],
+    message: "github.repo is required for non-local environments",
+  })
   .refine(
     (cfg) =>
       cfg.envName === "local" ||
@@ -195,66 +202,77 @@ function getCodeStarConnectionId(envName: string): string {
   return `{{resolve:ssm:/platform/${envName}/github/codestar-connection-id}}`;
 }
 
-const defaultConfig: Config = {
-  envName: process.env.ENV_NAME || "local",
+// Resolve env name once so we can tailor defaults based on it
+const envName = process.env.ENV_NAME || "local";
+
+const defaultConfig: IConfig = {
+  envName,
   // Account and region are required for all environments in Three-Flow architecture
-  account:
-    process.env.CDK_DEFAULT_ACCOUNT ||
+  accountId:
     process.env.AWS_ACCOUNT_ID ||
-    (() => {
-      throw new Error(
-        "AWS account ID is required. Set CDK_DEFAULT_ACCOUNT or AWS_ACCOUNT_ID environment variable."
-      );
-    })(),
+    process.env.CDK_DEFAULT_ACCOUNT ||
+    (envName === "local"
+      ? "000000000000"
+      : (() => {
+          throw new Error(
+            "AWS account ID is required. Set AWS_ACCOUNT_ID (or CDK_DEFAULT_ACCOUNT) environment variable."
+          );
+        })()),
   region:
-    process.env.CDK_DEFAULT_REGION ||
+    process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION ||
-    (() => {
-      throw new Error(
-        "AWS region is required. Set CDK_DEFAULT_REGION or AWS_DEFAULT_REGION environment variable."
-      );
-    })(),
+    process.env.CDK_DEFAULT_REGION ||
+    (envName === "local"
+      ? "us-east-1"
+      : (() => {
+          throw new Error(
+            "AWS region is required. Set AWS_REGION (or AWS_DEFAULT_REGION / CDK_DEFAULT_REGION) environment variable."
+          );
+        })()),
 
   // Service metadata
   service: {
-    name:
-      process.env.SERVICE_NAME ||
-      (() => {
-        throw new Error(
-          "Service name is required. Set SERVICE_NAME environment variable."
-        );
-      })(),
+    name: process.env.SERVICE_NAME || "users-ms",
     displayName:
       process.env.SERVICE_DISPLAY_NAME ||
       process.env.SERVICE_NAME ||
       "Microservice",
   },
 
-  // GitHub configuration (new structure)
-  github: {
-    repo:
-      process.env.GITHUB_REPO ||
-      (() => {
-        throw new Error(
-          "GitHub repository is required. Set GITHUB_REPO environment variable."
-        );
-      })(),
-    branch: process.env.GITHUB_BRANCH || "release",
-    codestarConnectionId: getCodeStarConnectionId(
-      process.env.ENV_NAME || "local"
-    ),
+  // Feature toggles
+  features: {
+    permissionsEnabled: false,
   },
+
+  // GitHub configuration (new structure)
+  github:
+    envName === "local"
+      ? undefined
+      : {
+          repo:
+            process.env.GITHUB_REPO ||
+            (() => {
+              throw new Error(
+                "GitHub repository is required. Set GITHUB_REPO environment variable."
+              );
+            })(),
+          branch: process.env.GITHUB_BRANCH || "release",
+          codestarConnectionId: getCodeStarConnectionId(envName),
+        },
 
   // AWS configuration
   aws: {
     region:
-      process.env.CDK_DEFAULT_REGION ||
+      process.env.AWS_REGION ||
       process.env.AWS_DEFAULT_REGION ||
-      (() => {
-        throw new Error(
-          "AWS region is required. Set CDK_DEFAULT_REGION or AWS_DEFAULT_REGION environment variable."
-        );
-      })(),
+      process.env.CDK_DEFAULT_REGION ||
+      (envName === "local"
+        ? "us-east-1"
+        : (() => {
+            throw new Error(
+              "AWS region is required. Set AWS_REGION (or AWS_DEFAULT_REGION / CDK_DEFAULT_REGION) environment variable."
+            );
+          })()),
     profile: process.env.AWS_PROFILE,
   },
 
@@ -291,17 +309,11 @@ const defaultConfig: Config = {
   },
 
   // Legacy properties for backward compatibility
-  gitHubRepo:
-    process.env.GITHUB_REPO ||
-    (() => {
-      throw new Error(
-        "GitHub repository is required. Set GITHUB_REPO environment variable."
-      );
-    })(),
-  gitHubBranch: process.env.GITHUB_BRANCH || "release",
-  codestarConnectionId: getCodeStarConnectionId(
-    process.env.ENV_NAME || "local"
-  ),
+  gitHubRepo: envName === "local" ? undefined : process.env.GITHUB_REPO,
+  gitHubBranch:
+    envName === "local" ? undefined : process.env.GITHUB_BRANCH || "release",
+  codestarConnectionId:
+    envName === "local" ? undefined : getCodeStarConnectionId(envName),
   /**
    * Canonical SSM base path prefix for the organization/app (e.g. "/super-deals").
    * - Sourced from env APP_BASE_PATH at config load time to keep config the single source of truth.
@@ -316,10 +328,10 @@ const defaultConfig: Config = {
  * Supports: local, localstack, staging, production
  * Validates that required properties (account, region) are present
  */
-function loadConfig(): Config {
+function loadConfig(): IConfig {
   const envName = process.env.ENV_NAME || "local";
 
-  let config: Config;
+  let config: IConfig;
 
   try {
     // Try to load environment-specific config
@@ -348,15 +360,15 @@ function loadConfig(): Config {
   }
 
   // Validate required properties for Three-Flow architecture
-  if (!config.account) {
+  if (!config.accountId) {
     throw new Error(
-      `AWS account ID is required for environment '${envName}'. Set CDK_DEFAULT_ACCOUNT or AWS_ACCOUNT_ID environment variable.`
+      `AWS account ID is required for environment '${envName}'. Set AWS_ACCOUNT_ID environment variable.`
     );
   }
 
   if (!config.region) {
     throw new Error(
-      `AWS region is required for environment '${envName}'. Set CDK_DEFAULT_REGION environment variable or specify in config.`
+      `AWS region is required for environment '${envName}'. Set AWS_REGION environment variable.`
     );
   }
 

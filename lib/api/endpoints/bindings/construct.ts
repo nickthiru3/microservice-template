@@ -1,30 +1,65 @@
 import { Construct } from "constructs";
 import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import ServicesConstruct from "#lib/services/construct";
-import type { ApiProps } from "#lib/api/types";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { Duration } from "aws-cdk-lib";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { Effect } from "aws-cdk-lib/aws-iam";
+import path from "path";
+import { buildSsmPublicPath } from "#src/helpers/ssm";
+import type { IApiProps } from "#lib/api/construct";
+import type { IConfig } from "#config/default";
 
-interface BindingsEndpointsProps {
-  readonly api: ApiProps;
-  readonly services: ServicesConstruct;
+interface IBindingsConstructProps {
+  readonly config: IConfig;
+  readonly apiProps: IApiProps;
 }
 
-class BindingsEndpointsConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: BindingsEndpointsProps) {
+class BindingsConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: IBindingsConstructProps) {
     super(scope, id);
 
-    const { api, services } = props;
+    const { config, apiProps } = props;
 
-    const wk = api.restApi.root.addResource(".well-known", api.optionsWithCors);
-    const bindings = wk.addResource("bindings", api.optionsWithCors);
+    const { envName, region } = config;
 
-    bindings.addMethod(
-      "GET",
-      new LambdaIntegration(services.servicesDiscovery.lambda),
-      {
-        operationName: "ServiceDiscovery_Bindings",
-      }
+    const ssmPublicPath = buildSsmPublicPath(envName);
+
+    const wk = apiProps.restApi.root.addResource(
+      ".well-known",
+      apiProps.optionsWithCors
     );
+    const bindings = wk.addResource("bindings", apiProps.optionsWithCors);
+
+    const lambda = new NodejsFunction(this, "NodejsFunction", {
+      bundling: {
+        externalModules: ["@aws-sdk"],
+        forceDockerBundling: true,
+      },
+      runtime: Runtime.NODEJS_20_X,
+      memorySize: 512,
+      timeout: Duration.minutes(1),
+      entry: path.join(__dirname, "./handler.ts"),
+      handler: "handler",
+      depsLockFilePath: path.join(__dirname, "../../../../package-lock.json"),
+      environment: {
+        ENV_NAME: envName,
+        REGION: region,
+        SSM_PUBLIC_PATH: ssmPublicPath,
+      },
+      initialPolicy: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ["ssm:GetParametersByPath"],
+          resources: [`arn:aws:ssm:*:*:parameter${ssmPublicPath ?? ""}*`],
+        }),
+      ],
+    });
+
+    bindings.addMethod("GET", new LambdaIntegration(lambda), {
+      operationName: "ServiceDiscovery_Bindings",
+    });
   }
 }
 
-export default BindingsEndpointsConstruct;
+export default BindingsConstruct;

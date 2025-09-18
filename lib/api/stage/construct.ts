@@ -1,5 +1,6 @@
 import { Construct } from "constructs";
 import {
+  RestApi,
   Deployment,
   Stage,
   LogGroupLogDestination,
@@ -8,38 +9,34 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnOutput } from "aws-cdk-lib";
-import { StringParameter } from "aws-cdk-lib/aws-ssm";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
-import { buildSsmPublicPath } from "#src/helpers/ssm";
+import type { IConfig } from "#config/default";
 
-interface StageConstructProps {
+interface IStageConstructProps {
   readonly restApi: RestApi;
-  readonly stageName: string;
+  readonly config: IConfig;
 }
 
 class StageConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: StageConstructProps) {
+  constructor(scope: Construct, id: string, props: IStageConstructProps) {
     super(scope, id);
 
-    const { restApi, stageName } = props;
+    const { restApi, config } = props;
 
-    const accessLogGroup = new LogGroup(this, `LogGroup-${stageName}`, {
-      logGroupName: `/aws/apigateway/${restApi.restApiId}/${stageName}`,
-      retention: RetentionDays.ONE_WEEK,
+    const envName = config.envName;
+    const serviceName = config.service.name;
+
+    const accessLogGroup = new LogGroup(this, `AccessLogs`, {
+      logGroupName: `/apigateway/${serviceName}/${envName}/access`,
+      retention: RetentionDays.ONE_MONTH,
     });
 
-    // const executionLogGroup = new LogGroup(this, `ExecutionLogGroup-${stageName}`, {
-    //   logGroupName: `/aws/apigateway/${api.restApiId}/${stageName}/execution`,
-    //   retention: RetentionDays.ONE_WEEK
-    // });
-
-    const deployment = new Deployment(this, `Deployment-${stageName}`, {
+    const deployment = new Deployment(this, `Deployment`, {
       api: restApi,
     });
 
-    const stage = new Stage(this, `Stage-${stageName}`, {
+    const stage = new Stage(this, `Stage`, {
       deployment,
-      stageName,
+      stageName: envName,
       accessLogDestination: new LogGroupLogDestination(accessLogGroup),
       accessLogFormat: AccessLogFormat.jsonWithStandardFields({
         caller: false,
@@ -64,21 +61,14 @@ class StageConstruct extends Construct {
     });
 
     // Set the default deployment stage
-    if (stageName === "dev") {
+    if (envName === "dev") {
       restApi.deploymentStage = stage;
     }
 
-    // Output the stage-specific URL with custom LogicalId (in outputs.json)
-    new CfnOutput(this, `RestApiUrl-${stageName}`, {
-      value: stage.urlForPath(),
-      exportName: `RestApiUrl${stageName}`,
-    }).overrideLogicalId(`RestApiUrl${stageName}`);
-
-    // Publish API base URL to SSM for service discovery
-    const basePath = buildSsmPublicPath(stageName);
-    new StringParameter(this, `ParamApiBaseUrl-${stageName}`, {
-      parameterName: `${basePath}/api/baseUrl`,
-      stringValue: stage.urlForPath(),
+    // Output the stage-specific URL with an alphanumeric logical ID
+    new CfnOutput(this, `RestApiUrl-${serviceName}`, {
+      value: stage.urlForPath("/"),
+      exportName: `RestApiUrl-${serviceName}`,
     });
   }
 }

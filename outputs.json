@@ -1,1 +1,9 @@
-{}
+{
+  "dev-Deals-ServiceStack": {
+    "StorageConstructS3BucketName5F2CEC90": "dev-deals-servicestack-storageconstructs3bucket250-qvg8wmhbtqg2",
+    "ApiConstructStageConstructRestApiUrlDeals15F46D2A": "https://ueje4uu9fe.execute-api.us-east-1.amazonaws.com/dev/",
+    "StorageConstructS3BucketArn1D6D5E0D": "arn:aws:s3:::dev-deals-servicestack-storageconstructs3bucket250-qvg8wmhbtqg2",
+    "DatabaseConstructTableArn5DAA7654": "arn:aws:dynamodb:us-east-1:324093102745:table/dev-Deals-ServiceStack-DatabaseConstructTable6CCCBD16-9Q268YCL6HPX",
+    "DatabaseConstructTableName44DCC803": "dev-Deals-ServiceStack-DatabaseConstructTable6CCCBD16-9Q268YCL6HPX"
+  }
+}

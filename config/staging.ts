@@ -1,6 +1,6 @@
-import type { Config } from './default';
+import type { IConfig } from './default';
 
-const stagingConfig: Partial<Config> = {
+const stagingConfig: Partial<IConfig> = {
   envName: 'staging',
   // Add staging-specific overrides here
 };

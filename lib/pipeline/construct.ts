@@ -10,16 +10,16 @@ import {
 import { LinuxBuildImage } from "aws-cdk-lib/aws-codebuild";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import PipelineStage from "./stage";
-import type { Config } from "#config/default";
+import type { IConfig } from "#config/default";
 
 /**
  * Pipeline construct that sets up a CI/CD pipeline using AWS CodePipeline
  */
 // Local props type colocated with construct, using Config as the source of truth
-interface PipelineConstructProps {
+interface IPipelineConstructProps {
   readonly envName: string;
   readonly env: Environment;
-  readonly config: Config & {
+  readonly config: IConfig & {
     stages?: Record<
       string,
       { enabled?: boolean; account?: string; region?: string }
@@ -30,7 +30,7 @@ interface PipelineConstructProps {
 }
 
 export class PipelineConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: PipelineConstructProps) {
+  constructor(scope: Construct, id: string, props: IPipelineConstructProps) {
     super(scope, id);
 
     const { envName, env, config } = props;
@@ -55,7 +55,7 @@ export class PipelineConstruct extends Construct {
       synth: new CodeBuildStep("Synth", {
         input: CodePipelineSource.connection(gitHubRepo, gitHubBranch, {
           connectionArn: `arn:aws:codestar-connections:${cfg.region || env.region}:${
-            cfg.account || env.account
+            cfg.accountId || env.account
           }:connection/${
             cfg.github?.codestarConnectionId ?? cfg.codestarConnectionId
           }`,
@@ -114,7 +114,7 @@ export class PipelineConstruct extends Construct {
           const stageEnv: Environment = {
             account:
               stageConfig?.account ||
-              cfg.account ||
+              cfg.accountId ||
               env.account ||
               Aws.ACCOUNT_ID,
             region:
@@ -146,7 +146,7 @@ export class PipelineConstruct extends Construct {
       const stage = new PipelineStage(this, `${envName}Stage`, {
         envName,
         env: {
-          account: cfg.account || env.account || Aws.ACCOUNT_ID,
+          account: cfg.accountId || env.account || Aws.ACCOUNT_ID,
           region: cfg.region || env.region || Aws.REGION,
         },
         config: cfg,

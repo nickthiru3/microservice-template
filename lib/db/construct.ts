@@ -1,56 +1,27 @@
 import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { TableV2, AttributeType } from "aws-cdk-lib/aws-dynamodb";
+import type { IConfig } from "#config/default";
 
-/**
- * Properties for the DynamoDB construct
- */
-export interface DbConstructProps {
-  /**
-   * Environment name (e.g., 'local', 'staging', 'production')
-   */
-  readonly envName: string;
-
-  /**
-   * Service name for resource naming and tagging
-   */
-  readonly serviceName?: string;
+export interface IDatabaseConstructProps {
+  readonly config: IConfig;
 }
 
-/**
- * DynamoDB construct following single table design patterns
- *
- * Features:
- * - Single table design with configurable GSIs
- * - Point-in-time recovery enabled
- * - Deletion protection for staging environment
- */
-class DbConstruct extends Construct {
-  /**
-   * The DynamoDB table instance
-   */
+class DatabaseConstruct extends Construct {
   public readonly table: TableV2;
 
-  constructor(scope: Construct, id: string, props: DbConstructProps) {
+  constructor(scope: Construct, id: string, props: IDatabaseConstructProps) {
     super(scope, id);
 
-    const { envName, serviceName = "deals-ms" } = props;
+    const { config } = props;
 
-    // Determine environment-specific defaults
-    // Note: Using "staging" instead of "production" because production deployment
-    // happens via manual approval in CodePipeline and doesn't re-synthesize CDK code
-    const isStaging = envName === "staging";
-    const shouldProtectFromDeletion = isStaging;
+    const envName = config.envName;
+    const serviceName = config.service.name;
 
-    // Simplified approach: Use AWS defaults for encryption and logging
-    // Add KMS/CloudWatch features when needed for production
+    // Protect data in non-dev/non-local; allow easy cleanup in dev/local
+    const shouldProtectFromDeletion = envName !== "local" && envName !== "dev";
 
-    // Create the DynamoDB table
     this.table = new TableV2(this, "Table", {
-      // Naming and identification
-      tableName: `${serviceName}-table-${envName}`,
-
-      // Single table design schema
       partitionKey: {
         name: "PK",
         type: AttributeType.STRING,
@@ -60,7 +31,6 @@ class DbConstruct extends Construct {
         type: AttributeType.STRING,
       },
 
-      // Global Secondary Indexes
       globalSecondaryIndexes: [
         {
           indexName: "GSI1",
@@ -74,30 +44,28 @@ class DbConstruct extends Construct {
           },
         },
       ],
-
-      // Use default billing (pay-per-request) and encryption (AWS-owned keys)
-
-      // Data protection
       deletionProtection: shouldProtectFromDeletion,
       pointInTimeRecovery: true,
-
-      // Resource management
-      removalPolicy: isStaging ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      removalPolicy: shouldProtectFromDeletion
+        ? RemovalPolicy.RETAIN
+        : RemovalPolicy.DESTROY,
     });
 
-    // Output table information
+    const tableName = this.table.tableName;
+    const tableArn = this.table.tableArn;
+
     new CfnOutput(this, "TableName", {
-      value: this.table.tableName,
+      value: tableName,
       description: "DynamoDB table name",
-      exportName: `${serviceName}-table-name-${envName}`,
+      exportName: `${serviceName}-TableName`,
     });
 
     new CfnOutput(this, "TableArn", {
-      value: this.table.tableArn,
+      value: tableArn,
       description: "DynamoDB table ARN",
-      exportName: `${serviceName}-table-arn-${envName}`,
+      exportName: `${serviceName}-TableArn`,
     });
   }
 }
 
-export default DbConstruct;
+export default DatabaseConstruct;

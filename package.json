@@ -16,7 +16,7 @@
     "prepare": "husky install",
     "setup": "cp .env.example .env && echo 'Please update .env with your values'",
     "dev": "ENV_NAME=local ts-node --transpile-only bin/app-stack.ts",
-    "deploy:local": "ENV_NAME=local cdklocal deploy --all --require-approval never",
+    "deploy:local": "ENV_NAME=local cdklocal deploy --all --outputs-file outputs.json --require-approval never",
     "diff:local": "ENV_NAME=local cdklocal diff --all",
     "destroy:local": "ENV_NAME=local cdklocal destroy --all --force",
     "bootstrap:pipeline": "ENV_NAME=staging npx cdk deploy --all --require-approval never",
@@ -28,7 +28,11 @@
     "localstack:restart": "npm run localstack:stop && npm run localstack:start",
     "localstack:status": "docker-compose -f docker-compose.localstack.yml ps",
     "localstack:logs": "docker-compose -f docker-compose.localstack.yml logs -f",
-    "localstack:health": "curl -s http://localhost:4566/health | jq"
+    "localstack:health": "curl -s http://localhost:4566/health | jq",
+    "bootstrap:dev": "ENV_NAME=dev npx cdk bootstrap aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION",
+    "diff:dev": "ENV_NAME=dev DEPLOY_MODE=direct npx cdk diff ServiceStack-dev",
+    "deploy:dev": "ENV_NAME=dev DEPLOY_MODE=direct npx cdk deploy ServiceStack-dev --require-approval never",
+    "destroy:dev": "ENV_NAME=dev DEPLOY_MODE=direct npx cdk destroy ServiceStack-dev --force"
   },
   "imports": {
     "#config/*": [
@@ -79,7 +83,6 @@
     "@aws-sdk/client-s3": "^3.864.0",
     "@aws-sdk/client-ssm": "^3.645.0",
     "@aws-sdk/util-dynamodb": "^3.868.0",
-    "aws-amplify": "^6.15.5",
     "aws-cdk-lib": "2.205.0",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",

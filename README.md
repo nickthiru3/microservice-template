@@ -1,3 +1,7 @@
+## Guides
+
+- See the central guides index: [docs/guides/README.md](../docs/guides/README.md)
+
 <!-- # Super Deals - Deals Microservice
 
 This is a serverless microservice for the Super Deals platform, built using AWS CDK with TypeScript.

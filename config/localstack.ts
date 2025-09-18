@@ -1,4 +1,4 @@
-import type { Config } from './default';
+import type { IConfig } from './default';
 
 /**
  * LocalStack development environment configuration
@@ -6,7 +6,7 @@ import type { Config } from './default';
  * This configuration is used when running the application against LocalStack
  * for local development and testing. All AWS services are emulated locally.
  */
-export const localstackConfig: Partial<Config> = {
+export const localstackConfig: Partial<IConfig> = {
   envName: 'localstack',
   region: 'us-east-1',
   

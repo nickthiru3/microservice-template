@@ -1,36 +1,42 @@
 import { Construct } from "constructs";
-import { Duration } from "aws-cdk-lib";
 import { Alarm, Metric, Unit } from "aws-cdk-lib/aws-cloudwatch";
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { Duration } from "aws-cdk-lib";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
-import { join } from "path";
+import path from "path";
+import type { IConfig } from "#config/default";
 
-interface Alarm4xxConstructProps {
-  readonly envName: string;
+interface IAlarm4xxConstructProps {
+  readonly config: IConfig;
 }
 
 class Alarm4xxConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: Alarm4xxConstructProps) {
+  constructor(scope: Construct, id: string, props: IAlarm4xxConstructProps) {
     super(scope, id);
 
-    const { envName } = props;
+    const { config } = props;
+
+    const serviceName = config.service.name;
 
     const lambda = new NodejsFunction(this, "Lambda", {
       bundling: {
+        externalModules: ["@aws-sdk"],
         forceDockerBundling: true,
       },
       runtime: Runtime.NODEJS_20_X,
-      entry: join(__dirname, "../../../src/monitor/api/4xx/handler.ts"),
+      memorySize: 512,
+      timeout: Duration.minutes(1),
+      entry: path.join(__dirname, "./handler.ts"),
       handler: "handler",
-      depsLockFilePath: join(__dirname, "../../../package-lock.json"),
+      depsLockFilePath: path.join(__dirname, "../../../../package-lock.json"),
     });
 
     const topic = new Topic(this, "Topic", {
-      displayName: "AlarmTopic",
-      topicName: "AlarmTopic",
+      displayName: "Api4xxAlarmTopic",
+      topicName: `${serviceName}-Api4xxAlarmTopic`,
     });
 
     topic.addSubscription(new LambdaSubscription(lambda));
@@ -43,12 +49,12 @@ class Alarm4xxConstruct extends Construct {
         statistic: "Sum",
         unit: Unit.COUNT,
         dimensionsMap: {
-          ApiName: envName,
+          ApiName: serviceName,
         },
       }),
       evaluationPeriods: 1,
       threshold: 5,
-      alarmName: `${envName}SuperDealsApi4xxAlarm`,
+      alarmName: `${serviceName}-Api4xxAlarm`,
     });
 
     const topicAction = new SnsAction(topic);

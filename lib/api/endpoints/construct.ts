@@ -1,26 +1,31 @@
 import { Construct } from "constructs";
-import BindingsEndpointsConstruct from "./bindings/construct";
+import BindingsConstruct from "./bindings/construct";
 import DealsConstruct from "./deals/construct";
-import ServicesConstruct from "#lib/services/construct";
-import type { ApiProps } from "#lib/api/types";
+import DatabaseConstruct from "#lib/db/construct";
+import type { IApiProps } from "#lib/api/construct";
+import type { IConfig } from "#config/default";
 
-interface EndpointsConstructProps {
-  readonly api: ApiProps;
-  readonly services: ServicesConstruct;
+interface IEndpointsConstructProps {
+  readonly config: IConfig;
+  readonly apiProps: IApiProps;
+  readonly db: DatabaseConstruct;
 }
 
 class EndpointsConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: EndpointsConstructProps) {
+  constructor(scope: Construct, id: string, props: IEndpointsConstructProps) {
     super(scope, id);
 
-    const { api, services } = props;
+    const { config, apiProps, db } = props;
 
-    new BindingsEndpointsConstruct(this, "BindingsEndpoints", {
-      api,
-      services,
+    new BindingsConstruct(this, "BindingsConstruct", {
+      config,
+      apiProps,
     });
 
-    new DealsConstruct(this, "DealsConstruct", { api, services });
+    new DealsConstruct(this, "DealsConstruct", {
+      apiProps,
+      db,
+    });
   }
 }
 

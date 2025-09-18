@@ -6,21 +6,25 @@ import {
   BucketEncryption,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
+import type { IConfig } from "#config/default";
 
-interface StorageConstructProps {
-  envName: string;
+interface IStorageConstructProps {
+  readonly config: IConfig;
 }
 
 class StorageConstruct extends Construct {
   public readonly s3Bucket: Bucket;
 
-  constructor(scope: Construct, id: string, props: StorageConstructProps) {
+  constructor(scope: Construct, id: string, props: IStorageConstructProps) {
     super(scope, id);
 
-    // We can use envName for resource naming or other environment-specific configurations
-    const { envName } = props;
+    const { config } = props;
 
-    // Define allowed origins for CORS
+    const envName = config.envName;
+
+    // Protect S3 in non-dev/non-local; allow easy cleanup in dev/local
+    const shouldProtectFromDeletion = envName !== "local" && envName !== "dev";
+
     const allowedOrigins = [
       "https://your-production-domain.com",
       "http://localhost:5173",
@@ -28,8 +32,11 @@ class StorageConstruct extends Construct {
     ];
 
     this.s3Bucket = new Bucket(this, "S3Bucket", {
-      removalPolicy: RemovalPolicy.RETAIN, // Default to RETAIN for safety
-      autoDeleteObjects: false, // Default to false for safety
+      removalPolicy: shouldProtectFromDeletion
+        ? RemovalPolicy.RETAIN
+        : RemovalPolicy.DESTROY,
+      // Enable auto-delete only in dev/local so destroy works without manual cleanup
+      autoDeleteObjects: !shouldProtectFromDeletion,
       cors: [
         {
           allowedMethods: [
@@ -61,14 +68,12 @@ class StorageConstruct extends Construct {
       encryption: BucketEncryption.S3_MANAGED,
     });
 
-    // Output the bucket name
     new CfnOutput(this, "S3BucketName", {
       value: this.s3Bucket.bucketName,
       exportName: "S3BucketName",
       description: "Name of the S3 bucket",
     });
 
-    // Output the bucket ARN
     new CfnOutput(this, "S3BucketArn", {
       value: this.s3Bucket.bucketArn,
       exportName: "S3BucketArn",

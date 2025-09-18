@@ -1,43 +1,61 @@
 import { Construct } from "constructs";
-import { RestApi, EndpointType, Cors } from "aws-cdk-lib/aws-apigateway";
+import {
+  RestApi,
+  EndpointType,
+  Cors,
+  ResourceOptions,
+} from "aws-cdk-lib/aws-apigateway";
 import StageConstruct from "./stage/construct";
 import AuthorizationConstruct from "./authorization/construct";
 import EndpointsConstruct from "./endpoints/construct";
-import PermissionsConstruct from "../permissions/construct";
-import ServicesConstruct from "../services/construct";
-import AuthBindingsConstruct from "../auth/construct";
-import type { ApiProps, CorsOnlyResourceOptions } from "./types";
+import PermissionsConstruct from "#lib/permissions/construct";
+import AuthBindingsConstruct from "#lib/auth/construct";
+import DatabaseConstruct from "#lib/db/construct";
+import type { IConfig } from "#config/default";
 
-interface ApiConstructProps {
-  envName: string;
-  auth: AuthBindingsConstruct;
-  permissions: PermissionsConstruct;
-  services: ServicesConstruct;
+interface IApiConstructProps {
+  readonly config: IConfig;
+  readonly auth: AuthBindingsConstruct;
+  readonly permissions: PermissionsConstruct;
+  readonly db: DatabaseConstruct;
 }
 
-/**
- * API Construct for managing HTTP API Gateway
- * Handles API endpoints, authorization, and stages
- */
+// Shared API props shape passed down to endpoint constructs
+type TCorsOnlyResourceOptions = Pick<
+  ResourceOptions,
+  "defaultCorsPreflightOptions"
+>;
+
+export interface IApiProps {
+  readonly restApi: RestApi;
+  readonly optionsWithCors: TCorsOnlyResourceOptions;
+  // Full set of authorization options from AuthorizationConstruct
+  readonly optionsWithAuth: AuthorizationConstruct["authOptions"];
+}
+
 class ApiConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: ApiConstructProps) {
+  constructor(scope: Construct, id: string, props: IApiConstructProps) {
     super(scope, id);
 
-    const { envName, auth, permissions, services } = props;
+    const { config, auth, permissions, db } = props;
 
-    /*** HTTP API ***/
+    const { envName } = config;
+    const serviceName = config.service.name;
+
+    /*** API ***/
 
     const restApi = new RestApi(this, "RestApi", {
-      description: "API Gateway for the deals-ms microservice",
+      restApiName: `${serviceName}`,
+      description: `API Gateway for ${serviceName}`,
       endpointTypes: [EndpointType.REGIONAL],
       deploy: false, // Disable automatic stage creation i.e. prod
       cloudWatchRole: true,
     });
 
     // Stages
-    new StageConstruct(this, `StageConstruct-${envName}`, {
+    new StageConstruct(this, "StageConstruct", {
       restApi,
-      stageName: envName,
+      config,
     });
 
     /*** Authorization ***/
@@ -50,7 +68,7 @@ class ApiConstruct extends Construct {
     /*** CORS ***/
 
     // Attach this to each root-level Resource
-    const optionsWithCors: CorsOnlyResourceOptions = {
+    const optionsWithCors: TCorsOnlyResourceOptions = {
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
         allowMethods: Cors.ALL_METHODS,
@@ -59,15 +77,16 @@ class ApiConstruct extends Construct {
 
     /*** Endpoints ***/
 
-    const apiProps: ApiProps = {
+    const apiProps: IApiProps = {
       restApi,
       optionsWithCors,
       optionsWithAuth: authorization.authOptions,
     };
 
     new EndpointsConstruct(this, "EndpointsConstruct", {
-      services,
-      api: apiProps,
+      config,
+      apiProps,
+      db,
     });
   }
 }

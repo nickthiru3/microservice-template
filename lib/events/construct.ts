@@ -1,21 +1,21 @@
 import { Construct } from "constructs";
-import SampleEventConstruct from "./sample-event/construct";
+// import TopicConstruct from "#lib/utils/topic/construct";
+import type { IConfig } from "#config/default";
 
-interface EventsConstructProps {
-  envName: string;
+interface IEventsConstructProps {
+  readonly config: IConfig;
 }
 
 class EventsConstruct extends Construct {
-  sampleEvent: SampleEventConstruct;
-
-  constructor(scope: Construct, id: string, props: EventsConstructProps) {
+  constructor(scope: Construct, id: string, props: IEventsConstructProps) {
     super(scope, id);
 
-    const { envName } = props;
+    const { config } = props;
 
-    this.sampleEvent = new SampleEventConstruct(this, "SampleEventConstruct", {
-      envName,
-    });
+    // new TopicConstruct(this, "ExampleEventNameTopicConstruct", {
+    //   config,
+    //   topicName: "ExampleEventName",
+    // });
   }
 }
 

@@ -4,10 +4,11 @@ import {
   ResourceServerScope,
 } from "aws-cdk-lib/aws-cognito";
 import AuthConstruct from "#lib/auth/construct";
+import type { IConfig } from "#config/default";
 
-interface ResourceServerConstructProps {
+interface IResourceServerConstructProps {
   readonly auth: AuthConstruct;
-  readonly envName: string;
+  readonly config: IConfig;
 }
 
 /**
@@ -22,35 +23,35 @@ class ResourceServerConstruct extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    props: ResourceServerConstructProps
+    props: IResourceServerConstructProps
   ) {
     super(scope, id);
 
-    const { auth, envName } = props;
+    const { auth, config } = props;
 
-    // Define scopes for Deals API
+    const serviceName = config.service.name;
+
     this.scopes = [
       new ResourceServerScope({
         scopeName: "read",
-        scopeDescription: "Read access to deals",
+        scopeDescription: `${serviceName}: Read access`,
       }),
       new ResourceServerScope({
         scopeName: "write",
-        scopeDescription: "Write access to deals",
+        scopeDescription: `${serviceName}: Write access`,
       }),
       new ResourceServerScope({
         scopeName: "delete",
-        scopeDescription: "Delete access to deals",
+        scopeDescription: `${serviceName}: Delete access`,
       }),
     ];
 
-    // Create Resource Server
     this.resourceServer = new UserPoolResourceServer(
       this,
       "UserPoolResourceServer",
       {
         userPool: auth.userPool,
-        identifier: `deals-${envName}`, // Include environment name in identifier
+        identifier: serviceName,
         scopes: this.scopes,
       }
     );

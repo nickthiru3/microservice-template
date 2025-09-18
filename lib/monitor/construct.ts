@@ -1,18 +1,19 @@
 import { Construct } from "constructs";
 import ApiMonitoringConstruct from "./api/construct";
+import type { IConfig } from "#config/default";
 
-interface MonitorConstructProps {
-  readonly envName: string;
+interface IMonitoringConstructProps {
+  readonly config: IConfig;
 }
 
-class MonitorConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: MonitorConstructProps) {
+class MonitoringConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: IMonitoringConstructProps) {
     super(scope, id);
 
-    const { envName } = props;
+    const { config } = props;
 
-    new ApiMonitoringConstruct(this, "ApiMonitoringConstruct", { envName });
+    new ApiMonitoringConstruct(this, "ApiMonitoringConstruct", { config });
   }
 }
 
-export default MonitorConstruct;
+export default MonitoringConstruct;

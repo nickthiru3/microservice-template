@@ -1,21 +1,22 @@
 import { Construct } from "constructs";
 import Alarm4xxConstruct from "./4xx/construct";
+import type { IConfig } from "#config/default";
 
-interface ApiMonitoringConstructProps {
-  readonly envName: string;
+interface IApiMonitoringConstructProps {
+  readonly config: IConfig;
 }
 
 class ApiMonitoringConstruct extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    props: ApiMonitoringConstructProps
+    props: IApiMonitoringConstructProps
   ) {
     super(scope, id);
 
-    const { envName } = props;
+    const { config } = props;
 
-    new Alarm4xxConstruct(this, "Alarm4xxConstruct", { envName });
+    new Alarm4xxConstruct(this, "Alarm4xxConstruct", { config });
   }
 }
 

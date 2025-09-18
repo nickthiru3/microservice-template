@@ -1,27 +1,27 @@
 import { Construct } from "constructs";
 import PostConstruct from "./post/construct";
-import ServicesConstruct from "#lib/services/construct";
-import type { ApiProps } from "#lib/api/types";
+import type { IApiProps } from "#lib/api/construct";
+import DatabaseConstruct from "#lib/db/construct";
 
-interface DealsConstructProps {
-  readonly api: ApiProps;
-  readonly services: ServicesConstruct;
+interface IDealsConstructProps {
+  readonly apiProps: IApiProps;
+  readonly db: DatabaseConstruct;
 }
 
 class DealsConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: DealsConstructProps) {
+  constructor(scope: Construct, id: string, props: IDealsConstructProps) {
     super(scope, id);
 
-    const { api, services } = props;
+    const { apiProps, db } = props;
 
-    const dealsResource = api.restApi.root.addResource(
+    const dealsResource = apiProps.restApi.root.addResource(
       "deals",
-      api.optionsWithCors
+      apiProps.optionsWithCors
     );
 
     new PostConstruct(this, "PostConstruct", {
-      api,
-      services,
+      apiProps,
+      db,
       dealsResource,
     });
   }

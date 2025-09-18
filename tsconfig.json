@@ -19,15 +19,22 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "typeRoots": ["./node_modules/@types"],
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "#config/*": ["./config/*"],
       "#src/*": ["./src/*"],
       "#lib/*": ["./lib/*"],
+      "#utils/*": ["./utils/*"],
       "#test/*": ["./test/*"],
       "#package-lock": ["./package-lock.json"]
     }
   },
-  "include": ["src/**/*", "lib/**/*", "bin/**/*", "config/**/*", "types/**/*"],
-  "exclude": ["node_modules", "cdk.out", "lib/db/construct copy.ts"]
+  "include": ["src/**/*", "lib/**/*", "bin/**/*", "config/**/*"],
+  "exclude": [
+    "node_modules",
+    "cdk.out",
+    "lib/pipeline/**/*",
+    "lib/cicd-stack.ts"
+  ]
 }

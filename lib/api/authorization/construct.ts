@@ -1,22 +1,22 @@
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { RestApi, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
-import PermissionsConstruct from "../../permissions/construct";
-import AuthBindingsConstruct from "../../auth/construct";
+import PermissionsConstruct from "#lib/permissions/construct";
+import AuthBindingsConstruct from "#lib/auth/construct";
 
-interface AuthOptions {
-  authorizationType: AuthorizationType;
-  authorizer: { authorizerId: string };
-  authorizationScopes: string[];
+interface IAuthOptions {
+  readonly authorizationType: AuthorizationType;
+  readonly authorizer: { authorizerId: string };
+  readonly authorizationScopes: string[];
 }
 
-interface DealsAuthOptions {
-  readDealsAuth: AuthOptions;
-  writeDealsAuth: AuthOptions;
-  deleteDealsAuth: AuthOptions;
+interface IDealsAuthOptions {
+  readonly readDealsAuth: IAuthOptions;
+  readonly writeDealsAuth: IAuthOptions;
+  readonly deleteDealsAuth: IAuthOptions;
 }
 
-interface AuthorizationConstructProps {
+interface IAuthorizationConstructProps {
   readonly restApi: RestApi;
   readonly auth: AuthBindingsConstruct;
   readonly permissions: PermissionsConstruct;
@@ -29,13 +29,13 @@ interface AuthorizationConstructProps {
 class AuthorizationConstruct extends Construct {
   authorizer: CognitoUserPoolsAuthorizer;
   authOptions: {
-    deals: DealsAuthOptions;
+    deals: IDealsAuthOptions;
   };
 
   constructor(
     scope: Construct,
     id: string,
-    props: AuthorizationConstructProps
+    props: IAuthorizationConstructProps
   ) {
     super(scope, id);
 
@@ -56,7 +56,7 @@ class AuthorizationConstruct extends Construct {
     this.authOptions = {
       deals: permissions.oauth.getAuthOptions(
         this.authorizer.authorizerId
-      ) as DealsAuthOptions,
+      ) as IDealsAuthOptions,
       // Add more service auth options here as needed
     };
   }

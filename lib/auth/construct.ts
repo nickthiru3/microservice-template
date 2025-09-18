@@ -1,38 +1,49 @@
 import { Construct } from "constructs";
 import { IUserPool, UserPool } from "aws-cdk-lib/aws-cognito";
-import { z } from "zod";
-import { getBasePath, readParamRequired } from "#src/helpers/ssm";
-import type { AuthBindings } from "@super-deals/infra-contracts";
-import { Aws } from "aws-cdk-lib";
+import BindingsConstruct from "#lib/utils/bindings/construct";
+import type { IAuthBindings } from "@super-deals/infra-contracts";
+import type { IConfig } from "#config/default";
 
-interface AuthBindingsConstructProps {
-  readonly envName: string;
+interface IAuthBindingsConstructProps {
+  readonly config: IConfig;
 }
 
 class AuthBindingsConstruct extends Construct {
   public readonly userPool: IUserPool;
 
-  constructor(scope: Construct, id: string, props: AuthBindingsConstructProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: IAuthBindingsConstructProps
+  ) {
     super(scope, id);
 
-    const { envName } = props;
+    const { config } = props;
 
-    const basePath = getBasePath(envName);
-    const userPoolId = readParamRequired(this, `${basePath}/auth/userPoolId`);
+    const envName = config.envName;
+    // Must match the service name used by the producer when publishing to SSM
+    // Users service currently publishes under '/super-deals/<env>/Users/public/...'
+    const producerServiceName = "Users";
 
-    // Validate required inputs and compute derived fields
-    const AuthBindingsSchema = z.object({
-      userPoolId: z.string().min(1, "userPoolId missing"),
-    });
-    const base = AuthBindingsSchema.parse({ userPoolId });
-    const issuerUrl = `https://cognito-idp.${Aws.REGION}.amazonaws.com/${base.userPoolId}`;
-    const jwksUri = `${issuerUrl}/.well-known/jwks.json`;
-    const bindings: AuthBindings = { ...base, issuerUrl, jwksUri };
+    const spec = {
+      userPoolId: "auth/userPoolId",
+    } as const;
+
+    const bindings = new BindingsConstruct<IAuthBindings>(
+      this,
+      "UsersMsAuthBindings",
+      {
+        envName,
+        producerServiceName,
+        visibility: "public",
+        spec,
+      }
+    );
 
     this.userPool = UserPool.fromUserPoolId(
       this,
       "ImportedUserPool",
-      bindings.userPoolId
+      bindings.values.userPoolId
     );
   }
 }
