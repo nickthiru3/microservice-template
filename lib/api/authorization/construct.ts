@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { RestApi, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
+import { RestApi, CognitoUserPoolsAuthorizer, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 import PermissionsConstruct from "#lib/permissions/construct";
-import AuthBindingsConstruct from "#lib/auth/construct";
+import BindingsConstruct from "#lib/bindings/construct";
 
 interface IAuthOptions {
   readonly authorizationType: AuthorizationType;
@@ -18,7 +17,7 @@ interface IDealsAuthOptions {
 
 interface IAuthorizationConstructProps {
   readonly restApi: RestApi;
-  readonly auth: AuthBindingsConstruct;
+  readonly bindings: BindingsConstruct;
   readonly permissions: PermissionsConstruct;
 }
 
@@ -39,14 +38,14 @@ class AuthorizationConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { restApi, auth, permissions } = props;
+    const { restApi, bindings, permissions } = props;
 
     // Create and attach Cognito authorizer
     this.authorizer = new CognitoUserPoolsAuthorizer(
       this,
       "CognitoUserPoolsAuthorizer",
       {
-        cognitoUserPools: [auth.userPool],
+        cognitoUserPools: [bindings.auth.userPool],
         identitySource: "method.request.header.Authorization",
       }
     );

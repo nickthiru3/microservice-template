@@ -3,11 +3,11 @@ import {
   UserPoolResourceServer,
   ResourceServerScope,
 } from "aws-cdk-lib/aws-cognito";
-import AuthConstruct from "#lib/auth/construct";
+import BindingsConstruct from "#lib/bindings/construct";
 import type { IConfig } from "#config/default";
 
 interface IResourceServerConstructProps {
-  readonly auth: AuthConstruct;
+  readonly bindings: BindingsConstruct;
   readonly config: IConfig;
 }
 
@@ -27,7 +27,7 @@ class ResourceServerConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { auth, config } = props;
+    const { config, bindings } = props;
 
     const serviceName = config.service.name;
 
@@ -50,7 +50,7 @@ class ResourceServerConstruct extends Construct {
       this,
       "UserPoolResourceServer",
       {
-        userPool: auth.userPool,
+        userPool: bindings.auth.userPool,
         identifier: serviceName,
         scopes: this.scopes,
       }

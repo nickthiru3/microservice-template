@@ -14,14 +14,26 @@ interface IBaseProps {
   readonly visibility?: TVisibility; // default: "public"
 }
 
-type TBindingsProps<TValues> =
+interface IKeysProps<TKeys extends readonly string[]> extends IBaseProps {
+  readonly keys: TKeys;
+}
+
+interface ISpecProps<TSpec extends Record<string, string>> extends IBaseProps {
+  readonly spec: TSpec;
+}
+
+type TBindingsUtilProps<TValues> =
   | (IBaseProps & { keys: readonly Extract<keyof TValues, string>[] })
   | (IBaseProps & { spec: { [K in keyof TValues]: string } });
 
-class BindingsConstruct<TValues> extends Construct {
+class BindingsUtilConstruct<TValues> extends Construct {
   readonly values: { [K in keyof TValues]: string };
 
-  constructor(scope: Construct, id: string, props: TBindingsProps<TValues>) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: TBindingsUtilProps<TValues>
+  ) {
     super(scope, id);
 
     const {
@@ -55,4 +67,4 @@ class BindingsConstruct<TValues> extends Construct {
   }
 }
 
-export default BindingsConstruct;
+export default BindingsUtilConstruct;

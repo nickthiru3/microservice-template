@@ -9,13 +9,13 @@ import StageConstruct from "./stage/construct";
 import AuthorizationConstruct from "./authorization/construct";
 import EndpointsConstruct from "./endpoints/construct";
 import PermissionsConstruct from "#lib/permissions/construct";
-import AuthBindingsConstruct from "#lib/auth/construct";
+import BindingsConstruct from "#lib/bindings/construct";
 import DatabaseConstruct from "#lib/db/construct";
 import type { IConfig } from "#config/default";
 
 interface IApiConstructProps {
   readonly config: IConfig;
-  readonly auth: AuthBindingsConstruct;
+  readonly bindings: BindingsConstruct;
   readonly permissions: PermissionsConstruct;
   readonly db: DatabaseConstruct;
 }
@@ -37,7 +37,7 @@ class ApiConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IApiConstructProps) {
     super(scope, id);
 
-    const { config, auth, permissions, db } = props;
+    const { config, bindings, permissions, db } = props;
 
     const { envName } = config;
     const serviceName = config.service.name;
@@ -61,7 +61,7 @@ class ApiConstruct extends Construct {
     /*** Authorization ***/
     const authorization = new AuthorizationConstruct(this, "Authorization", {
       restApi,
-      auth,
+      bindings,
       permissions,
     });
 

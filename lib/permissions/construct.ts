@@ -2,9 +2,8 @@ import { Construct } from "constructs";
 import ResourceServerConstruct from "./resource-server/construct";
 import OAuthConstruct from "./oauth/construct";
 import PoliciesConstruct from "./policies/construct";
-import IamConstruct from "#lib/iam/construct";
 import StorageConstruct from "#lib/storage/construct";
-import AuthConstruct from "#lib/auth/construct";
+import BindingsConstruct from "#lib/bindings/construct";
 import type { IConfig } from "#config/default";
 import { AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 
@@ -28,9 +27,8 @@ export interface IPermissionsProvider {
 
 interface IPermissionsConstructProps {
   readonly config: IConfig;
-  readonly iam: IamConstruct;
   readonly storage: StorageConstruct;
-  readonly auth: AuthConstruct;
+  readonly bindings: BindingsConstruct;
 }
 
 /**
@@ -43,14 +41,14 @@ class PermissionsConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IPermissionsConstructProps) {
     super(scope, id);
 
-    const { config, iam, auth, storage } = props;
+    const { config, bindings, storage } = props;
 
     const resourceServer = new ResourceServerConstruct(
       this,
       "ResourceServerConstruct",
       {
-        auth,
         config,
+        bindings,
       }
     );
 
@@ -61,7 +59,7 @@ class PermissionsConstruct extends Construct {
 
     new PoliciesConstruct(this, "PoliciesConstruct", {
       config,
-      iam,
+      bindings,
       storage,
     });
   }

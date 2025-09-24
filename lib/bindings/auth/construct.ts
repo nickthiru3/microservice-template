@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { IUserPool, UserPool } from "aws-cdk-lib/aws-cognito";
-import BindingsConstruct from "#lib/utils/bindings/construct";
+import BindingsUtilConstruct from "#lib/utils/bindings/construct";
 import type { IAuthBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
 
@@ -29,7 +29,7 @@ class AuthBindingsConstruct extends Construct {
       userPoolId: "auth/userPoolId",
     } as const;
 
-    const bindings = new BindingsConstruct<IAuthBindings>(
+    const bindings = new BindingsUtilConstruct<IAuthBindings>(
       this,
       "UsersMsAuthBindings",
       {

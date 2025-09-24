@@ -1,19 +1,24 @@
 import { Construct } from "constructs";
-import ApiMonitoringConstruct from "./api/construct";
+import ApiMonitorConstruct from "./api/construct";
+import BindingsConstruct from "#lib/bindings/construct";
 import type { IConfig } from "#config/default";
 
-interface IMonitoringConstructProps {
+interface IMonitorConstructProps {
   readonly config: IConfig;
+  readonly bindings: BindingsConstruct;
 }
 
-class MonitoringConstruct extends Construct {
-  constructor(scope: Construct, id: string, props: IMonitoringConstructProps) {
+class MonitorConstruct extends Construct {
+  constructor(scope: Construct, id: string, props: IMonitorConstructProps) {
     super(scope, id);
 
-    const { config } = props;
+    const { config, bindings } = props;
 
-    new ApiMonitoringConstruct(this, "ApiMonitoringConstruct", { config });
+    new ApiMonitorConstruct(this, "ApiMonitorConstruct", {
+      config,
+      bindings,
+    });
   }
 }
 
-export default MonitoringConstruct;
+export default MonitorConstruct;

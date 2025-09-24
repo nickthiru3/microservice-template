@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { Role, IRole } from "aws-cdk-lib/aws-iam";
-import BindingsConstruct from "#lib/utils/bindings/construct";
+import BindingsUtilConstruct from "#lib/utils/bindings/construct";
 import type { IIamBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
 
@@ -28,7 +28,7 @@ class IamBindingsConstruct extends Construct {
       merchantRoleArn: "iam/roles/merchant/arn",
     } as const;
 
-    const bindings = new BindingsConstruct<IIamBindings>(
+    const bindings = new BindingsUtilConstruct<IIamBindings>(
       this,
       "UsersMsIamBindings",
       {

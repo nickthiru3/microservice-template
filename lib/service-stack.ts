@@ -1,13 +1,12 @@
 import { Construct } from "constructs";
 import { Stack, StackProps } from "aws-cdk-lib";
-import MonitoringConstruct from "./monitor/construct";
+import BindingsConstruct from "./bindings/construct";
+import MonitorConstruct from "./monitor/construct";
 import DatabaseConstruct from "./db/construct";
 import StorageConstruct from "./storage/construct";
 import PermissionsConstruct from "./permissions/construct";
 import ApiConstruct from "./api/construct";
 // import EventsConstruct from "./events/construct";
-import AuthBindingsConstruct from "./auth/construct";
-import IamBindingsConstruct from "./iam/construct";
 import type { IConfig } from "#config/default";
 
 interface IServiceStackProps extends StackProps {
@@ -20,8 +19,13 @@ export class ServiceStack extends Stack {
 
     const { config } = props;
 
-    new MonitoringConstruct(this, "MonitoringConstruct", {
+    const bindings = new BindingsConstruct(this, "BindingsConstruct", {
       config,
+    });
+
+    new MonitorConstruct(this, "MonitorConstruct", {
+      config,
+      bindings,
     });
 
     const db = new DatabaseConstruct(this, "DatabaseConstruct", {
@@ -32,25 +36,16 @@ export class ServiceStack extends Stack {
       config,
     });
 
-    // Import shared auth/IAM primitives via infra-contracts (SSM)
-    const auth = new AuthBindingsConstruct(this, "AuthBindingsConstruct", {
-      config,
-    });
-    const iam = new IamBindingsConstruct(this, "IamBindingsConstruct", {
-      config,
-    });
-
     const permissions = new PermissionsConstruct(this, "PermissionsConstruct", {
       config,
-      iam,
-      auth,
+      bindings,
       storage,
     });
 
     new ApiConstruct(this, "ApiConstruct", {
       config,
       db,
-      auth,
+      bindings,
       permissions,
     });
 
