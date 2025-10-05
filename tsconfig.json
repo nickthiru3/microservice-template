@@ -25,12 +25,13 @@
       "#config/*": ["./config/*"],
       "#src/*": ["./src/*"],
       "#lib/*": ["./lib/*"],
-      "#utils/*": ["./utils/*"],
       "#test/*": ["./test/*"],
       "#package-lock": ["./package-lock.json"]
-    }
+    },
+    "esModuleInterop": true,
+    "isolatedModules": true
   },
-  "include": ["src/**/*", "lib/**/*", "bin/**/*", "config/**/*"],
+  "include": ["src/**/*", "lib/**/*", "bin/**/*", "config/**/*", "test/**/*"],
   "exclude": [
     "node_modules",
     "cdk.out",

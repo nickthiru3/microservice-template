@@ -3,11 +3,11 @@ import {
   UserPoolResourceServer,
   ResourceServerScope,
 } from "aws-cdk-lib/aws-cognito";
-import BindingsConstruct from "#lib/bindings/construct";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
 import type { IConfig } from "#config/default";
 
 interface IResourceServerConstructProps {
-  readonly bindings: BindingsConstruct;
+  readonly ssmBindings: SsmBindingsConstruct;
   readonly config: IConfig;
 }
 
@@ -27,7 +27,7 @@ class ResourceServerConstruct extends Construct {
   ) {
     super(scope, id);
 
-    const { config, bindings } = props;
+    const { ssmBindings, config } = props;
 
     const serviceName = config.service.name;
 
@@ -50,7 +50,7 @@ class ResourceServerConstruct extends Construct {
       this,
       "UserPoolResourceServer",
       {
-        userPool: bindings.auth.userPool,
+        userPool: ssmBindings.auth.userPool,
         identifier: serviceName,
         scopes: this.scopes,
       }

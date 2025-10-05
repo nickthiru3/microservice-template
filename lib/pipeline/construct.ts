@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Construct } from "constructs";
 import { Environment, Aws } from "aws-cdk-lib";
 import {

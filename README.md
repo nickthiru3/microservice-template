@@ -146,3 +146,10 @@ The project includes GitHub Actions workflows for CI/CD. The pipeline automatica
 ## License
 
 [Your License Here] -->
+
+## Secrets & Bindings
+
+- We standardize secrets via SSM SecureString dynamic references, avoiding plaintext in templates.
+- Slack webhook binding key is `slackWebhookUrl` at `monitor/slack/webhookUrl` under the private path for the `platform` producer.
+- CDK injects `SLACK_WEBHOOK_URL` into monitoring Lambdas using a value like `{{resolve:ssm-secure:/super-deals/{ENV_NAME}/platform/private/monitor/slack/webhookUrl}}`, resolved via `SecretValue.ssmSecure()`.
+- If you need to pin a specific SecureString version for a rollout, supply the version explicitly when calling `SecretValue.ssmSecure(parameterName, version)` in a custom construct.

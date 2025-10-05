@@ -4,16 +4,16 @@ import IamBindingsConstruct from "./iam/construct";
 import MonitorBindingsConstruct from "./monitor/construct";
 import type { IConfig } from "#config/default";
 
-type IBindingsConstructProps = {
+interface ISsmBindingsConstructProps {
   readonly config: IConfig;
-};
+}
 
-class BindingsConstruct extends Construct {
-  auth: AuthBindingsConstruct;
-  iam: IamBindingsConstruct;
-  monitor: MonitorBindingsConstruct;
+class SsmBindingsConstruct extends Construct {
+  public readonly auth: AuthBindingsConstruct;
+  public readonly iam: IamBindingsConstruct;
+  public readonly monitor: MonitorBindingsConstruct;
 
-  constructor(scope: Construct, id: string, props: IBindingsConstructProps) {
+  constructor(scope: Construct, id: string, props: ISsmBindingsConstructProps) {
     super(scope, id);
 
     const { config } = props;
@@ -36,4 +36,4 @@ class BindingsConstruct extends Construct {
   }
 }
 
-export default BindingsConstruct;
+export default SsmBindingsConstruct;

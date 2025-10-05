@@ -8,7 +8,7 @@ import {
   MethodLoggingLevel,
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
-import { CfnOutput } from "aws-cdk-lib";
+import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import type { IConfig } from "#config/default";
 
 interface IStageConstructProps {
@@ -25,9 +25,14 @@ class StageConstruct extends Construct {
     const envName = config.envName;
     const serviceName = config.service.name;
 
+    const shouldProtectFromDeletion = envName !== "local" && envName !== "dev";
+
     const accessLogGroup = new LogGroup(this, `AccessLogs`, {
       logGroupName: `/apigateway/${serviceName}/${envName}/access`,
       retention: RetentionDays.ONE_MONTH,
+      removalPolicy: shouldProtectFromDeletion
+        ? RemovalPolicy.RETAIN
+        : RemovalPolicy.DESTROY,
     });
 
     const deployment = new Deployment(this, `Deployment`, {

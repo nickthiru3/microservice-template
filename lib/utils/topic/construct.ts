@@ -31,6 +31,7 @@ class TopicConstruct extends Construct {
     const sub = new SnsToCloudWatchLogsSubscription(this, "LogSubscription", {
       logGroupName: `sns/${this.topicName}`,
       retention: RetentionDays.ONE_MONTH,
+      envName,
     });
 
     topic.addSubscription(sub);

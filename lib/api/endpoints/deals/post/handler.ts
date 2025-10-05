@@ -1,18 +1,98 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
-import KSUID from "ksuid";
+/**
+ * POST /deals Handler
+ *
+ * Lambda handler for creating new deals. Follows stratified design:
+ * - This file: Pure orchestration (Layer 1)
+ * - helpers.ts: Business logic (Layer 2)
+ * - AWS SDK: Infrastructure (Layer 3)
+ *
+ * Flow:
+ * 1. Parse and validate request body (Zod schema)
+ * 2. Get required environment variables
+ * 3. Normalize data (trim whitespace)
+ * 4. Validate business rules (expiration >= 7 days)
+ * 5. Generate unique deal ID (KSUID)
+ * 6. Build DynamoDB item
+ * 7. Save to DynamoDB (conditional write)
+ * 8. Return success response
+ *
+ * Error Handling:
+ * - Parse errors: 400 Bad Request
+ * - Validation errors: 400 Bad Request
+ * - Environment errors: 500 Internal Server Error
+ * - DynamoDB conflicts: 409 Conflict
+ * - DynamoDB errors: 502 Bad Gateway
+ * - Generic errors: 500 Internal Server Error
+ *
+ * @module lib/api/endpoints/deals/post/handler
+ */
+
 import type { APIGatewayProxyEvent } from "aws-lambda";
+import { type TApiResponse } from "#src/helpers/api";
+import type { TResult, TCreateDealPayload } from "./types";
 import {
-  apiSuccess,
-  apiError,
-  serializeErr,
-  type TApiResponse,
-} from "#src/helpers/api";
-import { dealPayloadSchema } from "./payload.schema";
-import type { TResult, TCreateDealPayload, IDealEntity } from "./types";
+  parseAndValidateBody,
+  getRequiredEnv,
+  normalizeData,
+  validateData,
+  generateDealId,
+  buildDealItem,
+  saveDealToDynamoDB,
+  prepareSuccessResponse,
+  prepareErrorResponse,
+  logEventReceived,
+} from "./helpers";
 
-const ddbClient = new DynamoDBClient();
-
+/**
+ * Lambda handler for creating deals
+ *
+ * Pure orchestration function that delegates to helper functions.
+ * No business logic - only coordinates the flow.
+ *
+ * @param event - API Gateway proxy event
+ * @returns API Gateway proxy response
+ *
+ * @example
+ * // Successful request
+ * const event = {
+ *   body: JSON.stringify({
+ *     userId: "user-123",
+ *     title: "50% Off Pizza",
+ *     originalPrice: "20.00",
+ *     discount: "50",
+ *     category: "foodDrink",
+ *     expiration: "2025-12-31T23:59:59Z",
+ *     logoFileKey: "logos/pizza.png"
+ *   })
+ * };
+ * const response = await handler(event);
+ * // Returns: {
+ * //   statusCode: 200,
+ * //   body: JSON.stringify({
+ * //     message: "Deal successfully created",
+ * //     dealId: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
+ * //   })
+ * // }
+ *
+ * @example
+ * // Invalid request
+ * const event = { body: JSON.stringify({ title: "" }) };
+ * const response = await handler(event);
+ * // Returns: 400 error with validation details
+ *
+ * @remarks
+ * Handler responsibilities:
+ * - Orchestrate helper function calls
+ * - Handle Result types (ok/not ok)
+ * - Catch and format exceptions
+ * - No business logic
+ *
+ * Helper functions handle:
+ * - Parsing and validation
+ * - Business logic
+ * - Database operations
+ * - Response formatting
+ */
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<TApiResponse> => {
@@ -47,137 +127,3 @@ export const handler = async (
     return prepareErrorResponse(err);
   }
 };
-
-// ----------------------------
-// Helpers (kept after handler)
-// ----------------------------
-
-function parseAndValidateBody(
-  event: APIGatewayProxyEvent
-): TResult<TCreateDealPayload> {
-  if (!event.body) {
-    return {
-      ok: false,
-      response: apiError(400, "Invalid request body: body is required"),
-    };
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(event.body);
-  } catch (e) {
-    return {
-      ok: false,
-      response: apiError(400, "Invalid JSON in request body"),
-    };
-  }
-  const result = dealPayloadSchema.safeParse(parsed);
-  if (!result.success) {
-    return {
-      ok: false,
-      response: apiError(400, "Invalid request body", result.error.flatten()),
-    };
-  }
-  return { ok: true, data: result.data };
-}
-
-// Generates a unique deal ID
-function generateDealId(): string {
-  return KSUID.randomSync(new Date()).string;
-}
-
-// Creates a standardized success API response
-function prepareSuccessResponse(dealId: string): TApiResponse {
-  const successResponse = apiSuccess({
-    message: "Deal successfully created",
-    dealId,
-  });
-  console.log(`Success Response: ${JSON.stringify(successResponse, null, 2)}`);
-  return successResponse;
-}
-
-// Logs the received event (truncated for readability in CloudWatch)
-function logEventReceived(event: APIGatewayProxyEvent) {
-  console.log("Received event:", JSON.stringify(event, null, 2));
-}
-
-// Creates a standardized error API response
-function prepareErrorResponse(err: unknown): TApiResponse {
-  const anyErr = err as any;
-  const status =
-    typeof anyErr?.statusCode === "number" ? anyErr.statusCode : 500;
-  const message = anyErr?.message || "Failed to create deal";
-  const details = anyErr?.details ?? serializeErr(err);
-  return apiError(status, message, details);
-}
-
-function getRequiredEnv(): TResult<{ tableName: string }> {
-  const tableName = process.env.TABLE_NAME;
-  if (!tableName) {
-    return { ok: false, response: apiError(500, "TABLE_NAME env var not set") };
-  }
-  return { ok: true, data: { tableName } };
-}
-
-function normalizeData(data: TCreateDealPayload): TCreateDealPayload {
-  return {
-    ...data,
-    title: data.title.trim(),
-    logoFileKey: data.logoFileKey.trim(),
-    // originalPrice/discount already coerced to numbers by zod transform
-  };
-}
-
-function validateData(data: TCreateDealPayload): void {
-  // Additional dynamic rule: expiration at least 7 days from today
-  const expiresAt = Date.parse(data.expiration);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const minDate = new Date(today);
-  minDate.setDate(today.getDate() + 7);
-  if (new Date(expiresAt) < minDate) {
-    throw new Error("expiration must be at least 7 days from today");
-  }
-}
-
-function buildDealItem(data: TCreateDealPayload, dealId: string): IDealEntity {
-  return {
-    PK: `DEAL#${dealId}`,
-    SK: `DEAL#${dealId}`,
-    EntityType: "Deal",
-    Id: dealId,
-    Title: data.title,
-    OriginalPrice: Number(data.originalPrice),
-    Discount: Number(data.discount),
-    Category: data.category,
-    Expiration: data.expiration,
-    MerchantId: data.userId,
-    LogoFileKey: data.logoFileKey,
-    CreatedAt: new Date().toISOString(),
-  };
-}
-
-async function saveDealToDynamoDB(
-  tableName: string,
-  dealItem: IDealEntity
-): Promise<TResult<true>> {
-  try {
-    await ddbClient.send(
-      new PutItemCommand({
-        TableName: tableName,
-        Item: marshall(dealItem),
-        ConditionExpression:
-          "attribute_not_exists(#PK) AND attribute_not_exists(#SK)",
-        ExpressionAttributeNames: { "#PK": "PK", "#SK": "SK" },
-      })
-    );
-    return { ok: true, data: true };
-  } catch (err: any) {
-    if (err?.name === "ConditionalCheckFailedException") {
-      return { ok: false, response: apiError(409, "Deal already exists") };
-    }
-    return {
-      ok: false,
-      response: apiError(502, "Error saving deal", { message: err?.message }),
-    };
-  }
-}

@@ -5,13 +5,13 @@ import { SNSEvent } from "aws-lambda";
  * event SNSEvent
  */
 export const handler = async (event: SNSEvent) => {
-  const slackWebHookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebHookUrl) {
+  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!slackWebhookUrl) {
     throw new Error("SLACK_WEBHOOK_URL is not defined");
   }
 
   for (const record of event.Records) {
-    await fetch(slackWebHookUrl, {
+    await fetch(slackWebhookUrl, {
       method: "POST",
       body: JSON.stringify({
         text: `${record.Sns.Message}`,

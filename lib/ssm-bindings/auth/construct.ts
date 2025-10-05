@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { IUserPool, UserPool } from "aws-cdk-lib/aws-cognito";
-import BindingsUtilConstruct from "#lib/utils/bindings/construct";
+import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
 import type { IAuthBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
 
@@ -21,22 +21,19 @@ class AuthBindingsConstruct extends Construct {
     const { config } = props;
 
     const envName = config.envName;
-    // Must match the service name used by the producer when publishing to SSM
-    // Users service currently publishes under '/super-deals/<env>/Users/public/...'
-    const producerServiceName = "Users";
+    const producerServiceName = "users";
 
-    const spec = {
+    const params = {
       userPoolId: "auth/userPoolId",
     } as const;
 
-    const bindings = new BindingsUtilConstruct<IAuthBindings>(
+    const bindings = new SsmBindingsUtilConstruct<IAuthBindings>(
       this,
-      "UsersMsAuthBindings",
+      "AuthBindings",
       {
         envName,
         producerServiceName,
-        visibility: "public",
-        spec,
+        params,
       }
     );
 

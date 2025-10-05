@@ -8,20 +8,21 @@ import { Topic } from "aws-cdk-lib/aws-sns";
 import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import path from "path";
 import type { IConfig } from "#config/default";
-import BindingsConstruct from "#lib/bindings/construct";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
 
 interface IAlarm4xxConstructProps {
   readonly config: IConfig;
-  readonly bindings: BindingsConstruct;
+  readonly ssmBindings: SsmBindingsConstruct;
 }
 
 class Alarm4xxConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IAlarm4xxConstructProps) {
     super(scope, id);
 
-    const { config, bindings } = props;
+    const { config, ssmBindings } = props;
 
     const serviceName = config.service.name;
+    const slackWebhookUrl = ssmBindings.monitor.slackWebhookUrl;
 
     const lambda = new NodejsFunction(this, "Lambda", {
       bundling: {
@@ -35,7 +36,7 @@ class Alarm4xxConstruct extends Construct {
       handler: "handler",
       depsLockFilePath: path.join(__dirname, "../../../../package-lock.json"),
       environment: {
-        SLACK_WEBHOOK_URL: bindings.monitor.slackWebHookUrl,
+        SLACK_WEBHOOK_URL: slackWebhookUrl,
       },
     });
 

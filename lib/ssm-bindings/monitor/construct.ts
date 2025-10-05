@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import BindingsUtilConstruct from "#lib/utils/bindings/construct";
+import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
 import type { IMonitorBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
 
@@ -8,7 +8,7 @@ interface IMonitorBindingsConstructProps {
 }
 
 class MonitorBindingsConstruct extends Construct {
-  public readonly slackWebHookUrl: string;
+  public readonly slackWebhookUrl: string;
 
   constructor(
     scope: Construct,
@@ -20,26 +20,27 @@ class MonitorBindingsConstruct extends Construct {
     const { config } = props;
 
     const envName = config.envName;
-    // Must match the service name used by the producer when publishing to SSM
-    // Users service currently publishes under '/super-deals/<env>/Users/public/...'
     const producerServiceName = "platform";
+    const visibility = "private";
+    const secure = true;
 
-    const spec = {
-      slackWebHookUrl: "Monitor/slack/webHookUrl",
+    const params = {
+      slackWebhookUrl: "monitor/slack/webhookUrl",
     } as const;
 
-    const bindings = new BindingsUtilConstruct<IMonitorBindings>(
+    const bindings = new SsmBindingsUtilConstruct<IMonitorBindings>(
       this,
       "MonitorBindings",
       {
         envName,
         producerServiceName,
-        visibility: "private",
-        spec,
+        visibility,
+        secure,
+        params,
       }
     );
 
-    this.slackWebHookUrl = bindings.values.slackWebHookUrl;
+    this.slackWebhookUrl = bindings.values.slackWebhookUrl;
   }
 }
 

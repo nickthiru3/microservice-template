@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { Role, IRole } from "aws-cdk-lib/aws-iam";
-import BindingsUtilConstruct from "#lib/utils/bindings/construct";
+import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
 import type { IIamBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
 
@@ -19,23 +19,19 @@ class IamBindingsConstruct extends Construct {
     const { config } = props;
 
     const envName = config.envName;
-    // Must match the service name used by the producer when publishing to SSM
-    // Users service currently publishes under '/super-deals/<env>/Users/public/...'
-    const producerServiceName = "Users";
+    const producerServiceName = "users";
 
-    // Read from users-ms public path using ergonomic spec mapping
-    const spec = {
+    const params = {
       merchantRoleArn: "iam/roles/merchant/arn",
     } as const;
 
-    const bindings = new BindingsUtilConstruct<IIamBindings>(
+    const bindings = new SsmBindingsUtilConstruct<IIamBindings>(
       this,
-      "UsersMsIamBindings",
+      "IamBindings",
       {
         envName,
         producerServiceName,
-        visibility: "public",
-        spec,
+        params,
       }
     );
 
