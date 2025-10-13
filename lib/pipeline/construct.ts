@@ -42,7 +42,7 @@ export class PipelineConstruct extends Construct {
       props.gitHubRepo ??
       cfg.github?.repo ??
       cfg.gitHubRepo ??
-      "nickthiru3/super-deals-deals-ms";
+      "example-org/example-service";
     const gitHubBranch =
       props.gitHubBranch ?? cfg.github?.branch ?? cfg.gitHubBranch ?? "main";
 
@@ -51,7 +51,7 @@ export class PipelineConstruct extends Construct {
 
     // Create the pipeline
     const pipeline = new CodePipeline(this, "Pipeline", {
-      pipelineName: `super-deals-deals-ms-${envName}-pipeline`,
+      pipelineName: `${cfg.service.name}-${envName}-pipeline`,
       crossAccountKeys: false,
       synth: new CodeBuildStep("Synth", {
         input: CodePipelineSource.connection(gitHubRepo, gitHubBranch, {

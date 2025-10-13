@@ -37,19 +37,18 @@ import {
   parseAndValidateBody,
   normalizeData,
   validateData,
-  buildDealItem,
+  buildResourceItem,
   getRequiredEnv,
-  generateDealId,
+  generateResourceId,
   prepareSuccessResponse,
   prepareErrorResponse,
   logEventReceived,
-  saveDealToDynamoDB,
-} from "#lib/api/endpoints/deals/post/helpers";
+  saveResourceToDynamoDB,
+} from "#lib/api/endpoints/resource/post/helpers";
 import {
-  dealPayloadSchema,
   categoryEnum,
-  type TCreateDealPayload,
-} from "#lib/api/endpoints/deals/post/payload.schema";
+  type TCreateResourcePayload,
+} from "#lib/api/endpoints/resource/post/payload.schema";
 
 function makeEventBody(body: any): APIGatewayProxyEvent {
   return {
@@ -58,12 +57,12 @@ function makeEventBody(body: any): APIGatewayProxyEvent {
     multiValueHeaders: {},
     httpMethod: "POST",
     isBase64Encoded: false,
-    path: "/deals",
+    path: "/resource",
     pathParameters: null,
     queryStringParameters: null,
     multiValueQueryStringParameters: null,
     stageVariables: null,
-    resource: "/deals",
+    resource: "/resource",
     requestContext: {} as any,
   };
 }
@@ -75,7 +74,7 @@ function makeEventBody(body: any): APIGatewayProxyEvent {
 describe("helpers.parseAndValidateBody", () => {
   const valid = {
     userId: "user-1",
-    title: "A Deal",
+    title: "A Resource",
     originalPrice: 100,
     discount: 15,
     logoFileKey: "logo.png",
@@ -87,7 +86,7 @@ describe("helpers.parseAndValidateBody", () => {
     const res = parseAndValidateBody(makeEventBody(valid));
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.data.title).toBe("A Deal");
+      expect(res.data.title).toBe("A Resource");
     }
   });
 
@@ -98,7 +97,9 @@ describe("helpers.parseAndValidateBody", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.response.statusCode).toBe(400);
-      expect(JSON.parse(res.response.body).error).toMatch(/Invalid request body/);
+      expect(JSON.parse(res.response.body).error).toMatch(
+        /Invalid request body/
+      );
     }
   });
 
@@ -130,7 +131,7 @@ describe("helpers.parseAndValidateBody", () => {
 
 describe("helpers.normalizeData", () => {
   test("trims title and logoFileKey", () => {
-    const input: TCreateDealPayload = {
+    const input: TCreateResourcePayload = {
       userId: "u1",
       title: "  Hello  ",
       originalPrice: 100,
@@ -153,7 +154,7 @@ describe("helpers.normalizeData", () => {
 // ------------
 
 describe("helpers.validateData", () => {
-  function makeBase(): TCreateDealPayload {
+  function makeBase(): TCreateResourcePayload {
     return {
       userId: "u1",
       title: "Hello",
@@ -167,7 +168,9 @@ describe("helpers.validateData", () => {
 
   test("throws when expiration < 7 days from today", () => {
     const payload = makeBase();
-    payload.expiration = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    payload.expiration = new Date(
+      Date.now() + 2 * 24 * 60 * 60 * 1000
+    ).toISOString();
     expect(() => validateData(payload)).toThrow(
       /expiration must be at least 7 days from today/
     );
@@ -180,12 +183,12 @@ describe("helpers.validateData", () => {
 });
 
 // --------------
-// buildDealItem
+// buildResourceItem
 // --------------
 
-describe("helpers.buildDealItem", () => {
+describe("helpers.buildResourceItem", () => {
   test("produces correct keys and coercions", () => {
-    const payload: TCreateDealPayload = {
+    const payload: TCreateResourcePayload = {
       userId: "u1",
       title: "Hello",
       originalPrice: 100 as any,
@@ -196,11 +199,11 @@ describe("helpers.buildDealItem", () => {
     } as any;
 
     const id = "ABC123";
-    const item = buildDealItem(payload, id);
+    const item = buildResourceItem(payload, id);
 
-    expect(item.PK).toBe(`DEAL#${id}`);
-    expect(item.SK).toBe(`DEAL#${id}`);
-    expect(item.EntityType).toBe("Deal");
+    expect(item.PK).toBe(`RESOURCE#${id}`);
+    expect(item.SK).toBe(`RESOURCE#${id}`);
+    expect(item.EntityType).toBe("Resource");
     expect(item.Id).toBe(id);
     expect(item.Title).toBe("Hello");
     expect(item.OriginalPrice).toBe(100);
@@ -223,11 +226,11 @@ describe("helpers.getRequiredEnv", () => {
   });
 
   test("returns ok with tableName when env is set", () => {
-    process.env.TABLE_NAME = "DealsTable";
+    process.env.TABLE_NAME = "ResourceTable";
     const res = getRequiredEnv();
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.data.tableName).toBe("DealsTable");
+      expect(res.data.tableName).toBe("ResourceTable");
     }
   });
 
@@ -243,22 +246,22 @@ describe("helpers.getRequiredEnv", () => {
   });
 });
 
-describe("helpers.generateDealId", () => {
+describe("helpers.generateResourceId", () => {
   test("delegates to KSUID generator", () => {
-    const id = generateDealId();
+    const id = generateResourceId();
     expect(randomSyncMock).toHaveBeenCalledTimes(1);
     expect(id).toBe("KSUID_TEST_VALUE");
   });
 });
 
 describe("helpers.prepareSuccessResponse", () => {
-  test("returns API success payload with deal id", () => {
-    const response = prepareSuccessResponse("DEAL123");
+  test("returns API success payload with resource id", () => {
+    const response = prepareSuccessResponse("RESOURCE123");
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body).toMatchObject({
-      message: "Deal successfully created",
-      dealId: "DEAL123",
+      message: "Resource successfully created",
+      resourceId: "RESOURCE123",
     });
   });
 });
@@ -276,7 +279,7 @@ describe("helpers.prepareErrorResponse", () => {
     const response = prepareErrorResponse({});
     expect(response.statusCode).toBe(500);
     const body = JSON.parse(response.body);
-    expect(body.error).toBe("Failed to create deal");
+    expect(body.error).toBe("Failed to create resource");
   });
 
   test("uses status/message/details from custom error", () => {
@@ -305,10 +308,10 @@ describe("helpers.logEventReceived", () => {
   });
 });
 
-describe("helpers.saveDealToDynamoDB", () => {
-  const payload: TCreateDealPayload = {
+describe("helpers.saveResourceToDynamoDB", () => {
+  const payload: TCreateResourcePayload = {
     userId: "merchant-1",
-    title: "Deal",
+    title: "Resource",
     originalPrice: 100,
     discount: 25,
     logoFileKey: "logo.png",
@@ -316,7 +319,7 @@ describe("helpers.saveDealToDynamoDB", () => {
     expiration: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
   } as any;
 
-  const item = buildDealItem(payload, "DEAL123");
+  const item = buildResourceItem(payload, "RESOURCE123");
 
   afterEach(() => {
     sendMock.mockReset();
@@ -325,15 +328,13 @@ describe("helpers.saveDealToDynamoDB", () => {
   test("returns ok when DynamoDB write succeeds", async () => {
     sendMock.mockResolvedValueOnce({});
 
-    const result = await saveDealToDynamoDB("DealsTable", item);
+    const result = await saveResourceToDynamoDB("ResourceTable", item);
 
     expect(result.ok).toBe(true);
     expect(sendMock).toHaveBeenCalledTimes(1);
     const command = sendMock.mock.calls[0][0] as any;
-    expect(command.input.TableName).toBe("DealsTable");
-    expect(command.input.ConditionExpression).toContain(
-      "attribute_not_exists"
-    );
+    expect(command.input.TableName).toBe("ResourceTable");
+    expect(command.input.ConditionExpression).toContain("attribute_not_exists");
   });
 
   test("returns 409 when item already exists", async () => {
@@ -341,7 +342,7 @@ describe("helpers.saveDealToDynamoDB", () => {
       name: "ConditionalCheckFailedException",
     });
 
-    const result = await saveDealToDynamoDB("DealsTable", item);
+    const result = await saveResourceToDynamoDB("ResourceTable", item);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -352,7 +353,7 @@ describe("helpers.saveDealToDynamoDB", () => {
   test("returns 502 when DynamoDB fails", async () => {
     sendMock.mockRejectedValueOnce({ message: "boom" });
 
-    const result = await saveDealToDynamoDB("DealsTable", item);
+    const result = await saveResourceToDynamoDB("ResourceTable", item);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

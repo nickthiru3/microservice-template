@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-// import TopicConstruct from "#lib/utils/topic/construct";
+import TopicConstruct from "#lib/utils/topic/construct";
 import type { IConfig } from "#config/default";
 
 interface IEventsConstructProps {
@@ -12,10 +12,10 @@ class EventsConstruct extends Construct {
 
     const { config } = props;
 
-    // new TopicConstruct(this, "ExampleEventNameTopicConstruct", {
-    //   config,
-    //   topicName: "ExampleEventName",
-    // });
+    new TopicConstruct(this, "ExampleEventNameTopicConstruct", {
+      config,
+      topicName: "ExampleEventName",
+    });
   }
 }
 

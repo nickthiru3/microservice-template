@@ -8,15 +8,15 @@ import {
 import StageConstruct from "./stage/construct";
 import AuthorizationConstruct from "./authorization/construct";
 import EndpointsConstruct from "./endpoints/construct";
-import PermissionsConstruct from "#lib/permissions/construct";
-import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
+import type { IPermissionsProvider } from "#lib/permissions/construct";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct";
 import DatabaseConstruct from "#lib/db/construct";
 import type { IConfig } from "#config/default";
 
 interface IApiConstructProps {
   readonly config: IConfig;
   readonly ssmBindings: SsmBindingsConstruct;
-  readonly permissions: PermissionsConstruct;
+  readonly permissions: IPermissionsProvider;
   readonly db: DatabaseConstruct;
 }
 

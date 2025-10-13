@@ -1,11 +1,11 @@
 openapi: "3.0.0"
 info:
-  title: SuperDeals
+  title: Microservice Template
   version: "1.0"
 
 tags:
-  - name: deals
-    description: Deals service
+  - name: resource
+    description: Primary resource service
   - name: merchants
     description: Merchants service
 
@@ -45,9 +45,9 @@ paths:
   # /merchants/account/confirm-sign-up:
   # $ref: "./resources/merchants/account/confirm-sign-up.yml"
 
-  # Merchant deals service
-  # /merchants/deals:
-  # $ref: "./resources/merchants/deals/create-deal.yml"
+  # Merchant resource service
+  # /merchants/resource:
+  #   $ref: "./resources/merchants/resource/create-resource.yml"
 
   # Accounts service
   /accounts/merchants:

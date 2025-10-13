@@ -12,8 +12,8 @@ export const localstackConfig: Partial<IConfig> = {
   
   // GitHub/CodeStar configuration (not used in LocalStack)
   github: {
-    repo: 'nickthiru/super-deals-deals-ms',
-    branch: 'master',
+    repo: 'example-org/example-service',
+    branch: 'main',
     // CodeStar connection not needed for LocalStack
     codestarConnectionId: 'not-applicable-localstack'
   },
@@ -44,10 +44,10 @@ export const localstackConfig: Partial<IConfig> = {
   // Resource naming (no account separation needed in LocalStack)
   resources: {
     // Simple naming since everything runs locally
-    tablePrefix: 'localstack-deals',
-    bucketPrefix: 'localstack-deals',
-    functionPrefix: 'localstack-deals',
-    apiPrefix: 'localstack-deals'
+    tablePrefix: 'localstack-resource',
+    bucketPrefix: 'localstack-resource',
+    functionPrefix: 'localstack-resource',
+    apiPrefix: 'localstack-resource'
   },
   
   // Development-specific settings

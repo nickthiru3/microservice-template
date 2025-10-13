@@ -56,7 +56,14 @@ export interface IConfig {
 
   // Feature toggles
   features?: {
-    permissionsEnabled: boolean;
+    permissionsEnabled?: boolean;
+    queuesEnabled?: boolean;
+    monitoringLambdaErrorsEnabled?: boolean;
+    monitoringDynamoThrottlesEnabled?: boolean;
+    monitoringS3FailuresEnabled?: boolean;
+    dynamodbStreamsEnabled?: boolean;
+    schedulerEnabled?: boolean;
+    secretsManagerEnabled?: boolean;
   };
 
   // Development-specific settings
@@ -153,8 +160,16 @@ const ConfigSchema = z
     }),
     features: z
       .object({
-        permissionsEnabled: z.boolean(),
+        permissionsEnabled: z.boolean().optional(),
+        queuesEnabled: z.boolean().optional(),
+        monitoringLambdaErrorsEnabled: z.boolean().optional(),
+        monitoringDynamoThrottlesEnabled: z.boolean().optional(),
+        monitoringS3FailuresEnabled: z.boolean().optional(),
+        dynamodbStreamsEnabled: z.boolean().optional(),
+        schedulerEnabled: z.boolean().optional(),
+        secretsManagerEnabled: z.boolean().optional(),
       })
+      .partial()
       .optional(),
     development: z
       .object({
@@ -232,16 +247,23 @@ const defaultConfig: IConfig = {
 
   // Service metadata
   service: {
-    name: process.env.SERVICE_NAME || "users-ms",
+    name: process.env.SERVICE_NAME || "{{SERVICE_NAME}}",
     displayName:
       process.env.SERVICE_DISPLAY_NAME ||
       process.env.SERVICE_NAME ||
-      "Microservice",
+      "{{SERVICE_DISPLAY_NAME}}",
   },
 
   // Feature toggles
   features: {
     permissionsEnabled: false,
+    queuesEnabled: false,
+    monitoringLambdaErrorsEnabled: false,
+    monitoringDynamoThrottlesEnabled: false,
+    monitoringS3FailuresEnabled: false,
+    dynamodbStreamsEnabled: false,
+    schedulerEnabled: false,
+    secretsManagerEnabled: false,
   },
 
   // GitHub configuration (new structure)
@@ -315,12 +337,12 @@ const defaultConfig: IConfig = {
   codestarConnectionId:
     envName === "local" ? undefined : getCodeStarConnectionId(envName),
   /**
-   * Canonical SSM base path prefix for the organization/app (e.g. "/super-deals").
+   * Canonical SSM base path prefix for the organization/app (e.g. "/{{APP_BASE_PATH}}").
    * - Sourced from env APP_BASE_PATH at config load time to keep config the single source of truth.
    * - Helpers (e.g., src/helpers/ssm.ts) should reference this field, not process.env.APP_BASE_PATH directly.
-   * - If unset, helpers may apply a sane default ("/super-deals") close to usage.
+   * - If unset, helpers may apply a sane default ("/{{APP_BASE_PATH}}") close to usage.
    */
-  parameterStorePrefix: process.env.APP_BASE_PATH || undefined,
+  parameterStorePrefix: process.env.APP_BASE_PATH || "{{APP_BASE_PATH}}",
 };
 
 /**

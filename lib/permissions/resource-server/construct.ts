@@ -12,7 +12,7 @@ interface IResourceServerConstructProps {
 }
 
 /**
- * Construct for managing the Deals Resource Server in Cognito
+ * Construct for managing the template resource server in Cognito
  * Handles scope definitions and resource server configuration
  */
 class ResourceServerConstruct extends Construct {

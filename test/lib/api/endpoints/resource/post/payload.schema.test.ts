@@ -1,10 +1,10 @@
-import { dealPayloadSchema, categoryEnum } from "#lib/api/endpoints/deals/post/payload.schema";
+import { resourcePayloadSchema, categoryEnum } from "#lib/api/endpoints/resource/post/payload.schema";
 
-describe("dealPayloadSchema", () => {
+describe("resourcePayloadSchema", () => {
   test("accepts a valid payload (with numeric coercions)", () => {
     const payload = {
       userId: "user-1",
-      title: "My Deal",
+      title: "My Resource",
       originalPrice: "100", // coerced to number
       discount: "15", // coerced to number
       logoFileKey: "logo.png",
@@ -12,7 +12,7 @@ describe("dealPayloadSchema", () => {
       expiration: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
-    const res = dealPayloadSchema.safeParse(payload);
+    const res = resourcePayloadSchema.safeParse(payload);
     expect(res.success).toBe(true);
     if (res.success) {
       expect(typeof res.data.originalPrice).toBe("number");
@@ -23,7 +23,7 @@ describe("dealPayloadSchema", () => {
   test("rejects invalid ISO date-time", () => {
     const payload = {
       userId: "user-1",
-      title: "My Deal",
+      title: "My Resource",
       originalPrice: 100,
       discount: 10,
       logoFileKey: "logo.png",
@@ -31,7 +31,7 @@ describe("dealPayloadSchema", () => {
       expiration: "not-a-date",
     };
 
-    const res = dealPayloadSchema.safeParse(payload);
+    const res = resourcePayloadSchema.safeParse(payload);
     expect(res.success).toBe(false);
     if (!res.success) {
       // Ensure specific error message set in refine()
@@ -43,7 +43,7 @@ describe("dealPayloadSchema", () => {
   test("rejects when required fields are missing", () => {
     const payload = {
       // userId missing
-      title: "My Deal",
+      title: "My Resource",
       originalPrice: 100,
       discount: 10,
       logoFileKey: "logo.png",
@@ -51,14 +51,14 @@ describe("dealPayloadSchema", () => {
       expiration: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
     } as any;
 
-    const res = dealPayloadSchema.safeParse(payload);
+    const res = resourcePayloadSchema.safeParse(payload);
     expect(res.success).toBe(false);
   });
 
   test("rejects category not in enum", () => {
     const payload = {
       userId: "user-1",
-      title: "My Deal",
+      title: "My Resource",
       originalPrice: 100,
       discount: 10,
       logoFileKey: "logo.png",
@@ -66,7 +66,7 @@ describe("dealPayloadSchema", () => {
       expiration: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
-    const res = dealPayloadSchema.safeParse(payload);
+    const res = resourcePayloadSchema.safeParse(payload);
     expect(res.success).toBe(false);
   });
 });

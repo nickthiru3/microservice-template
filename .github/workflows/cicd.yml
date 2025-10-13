@@ -1,4 +1,4 @@
-name: Super Deals CI/CD
+name: Microservice Template CI/CD
 
 on:
   # Continuous Integration on pushes and PRs, Deployment on version tags
@@ -63,11 +63,11 @@ jobs:
         run: |
           echo "Triggering deployment for version ${{ steps.version.outputs.version }}"
           aws codepipeline start-pipeline-execution \
-            --name "super-deals-deals-ms-staging-pipeline" \
+            --name "{{PIPELINE_NAME}}" \
             --source-revisions actionName=Source,revisionId=${{ github.sha }}
           
           echo "✅ Pipeline execution started successfully"
-          echo "🔗 View pipeline: https://console.aws.amazon.com/codesuite/codepipeline/pipelines/super-deals-deals-ms-staging-pipeline/view"
+          echo "🔗 View pipeline: https://console.aws.amazon.com/codesuite/codepipeline/pipelines/{{PIPELINE_NAME}}/view"
   
   validate-cdk:
     name: Validate CDK Synthesis

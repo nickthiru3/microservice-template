@@ -7,8 +7,8 @@ import {
 
 const config = {
   service: {
-    name: "deals",
-    displayName: "Deals",
+    name: "resource",
+    displayName: "Resource",
   },
 } as any;
 
@@ -50,12 +50,12 @@ describe("lib/permissions/resource-server/construct", () => {
       }
     );
 
-    construct.identifier = "deals";
+    construct.identifier = "resource";
 
     expect(construct.getOAuthScopes()).toEqual([
-      "deals/read",
-      "deals/write",
-      "deals/delete",
+      "resource/read",
+      "resource/write",
+      "resource/delete",
     ]);
   });
 });

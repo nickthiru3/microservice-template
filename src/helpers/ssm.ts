@@ -6,8 +6,8 @@
  * path naming conventions.
  *
  * Path Structure:
- * - `/super-deals/{env}/{service}/public/*` - Public parameters (API URLs, etc.)
- * - `/super-deals/{env}/{service}/private/*` - Private parameters (secrets, keys)
+ * - `/{{APP_BASE_PATH}}/{env}/{service}/public/*` - Public parameters (API URLs, etc.)
+ * - `/{{APP_BASE_PATH}}/{env}/{service}/private/*` - Private parameters (secrets, keys)
  *
  * @module helpers/ssm
  */
@@ -30,15 +30,15 @@ export type TSsmVisibility = "public" | "private";
  * Resolves the application base path for SSM parameters
  *
  * Uses config.parameterStorePrefix as single source of truth,
- * falling back to "/super-deals" if not configured.
+ * falling back to "{{APP_BASE_PATH}}" if not configured.
  *
- * @returns Base path for all SSM parameters (e.g., "/super-deals")
+ * @returns Base path for all SSM parameters (e.g., "/{{APP_BASE_PATH}}")
  *
  * @internal This is a private helper function
  */
 function resolveAppBasePath(): string {
   // Single source of truth: config.parameterStorePrefix (set from env in config/default.ts)
-  return config.parameterStorePrefix || "/super-deals";
+  return config.parameterStorePrefix || "{{APP_BASE_PATH}}";
 }
 
 /**
@@ -47,7 +47,7 @@ function resolveAppBasePath(): string {
  * Uses provided name if given, otherwise falls back to config.service.name.
  *
  * @param provided - Optional service name override
- * @returns Service name (e.g., "users-ms", "deals-ms")
+ * @returns Service name (e.g., "{{SERVICE_NAME}}")
  *
  * @internal This is a private helper function
  */
@@ -67,8 +67,8 @@ function resolveServiceName(provided?: string): string {
  * @returns Normalized SSM parameter path
  *
  * @example
- * buildSsmPath("dev", "public", "users-ms")
- * // Returns: "/super-deals/dev/users-ms/public"
+ * buildSsmPath("dev", "public", "{{SERVICE_NAME}}")
+ * // Returns: "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public"
  *
  * @internal This is a private helper function
  */
@@ -95,11 +95,11 @@ function buildSsmPath(
  *
  * @example
  * buildSsmPublicPath("dev")
- * // Returns: "/super-deals/dev/users-ms/public"
+ * // Returns: "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public"
  *
  * @example
- * buildSsmPublicPath("production", "deals-ms")
- * // Returns: "/super-deals/production/deals-ms/public"
+ * buildSsmPublicPath("production", "{{SERVICE_NAME}}")
+ * // Returns: "/{{APP_BASE_PATH}}/production/{{SERVICE_NAME}}/public"
  *
  * @see {@link buildSsmPrivatePath} for private parameters
  */
@@ -122,11 +122,11 @@ export function buildSsmPublicPath(
  *
  * @example
  * buildSsmPrivatePath("dev")
- * // Returns: "/super-deals/dev/users-ms/private"
+ * // Returns: "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private"
  *
  * @example
- * buildSsmPrivatePath("production", "deals-ms")
- * // Returns: "/super-deals/production/deals-ms/private"
+ * buildSsmPrivatePath("production", "{{SERVICE_NAME}}")
+ * // Returns: "/{{APP_BASE_PATH}}/production/{{SERVICE_NAME}}/private"
  *
  * @see {@link buildSsmPublicPath} for public parameters
  */
@@ -145,12 +145,12 @@ export function buildSsmPrivatePath(
  * parameters.
  *
  * @param scope - CDK construct scope
- * @param parameterName - Full SSM parameter name (e.g., "/super-deals/dev/users-ms/public/apiUrl")
+ * @param parameterName - Full SSM parameter name (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/apiUrl")
  * @returns Parameter value as CDK token (resolved at deployment)
  *
  * @example
  * // Read API URL from SSM
- * const apiUrl = readParam(this, "/super-deals/dev/users-ms/public/apiUrl");
+ * const apiUrl = readParam(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/apiUrl");
  * // Use in Lambda environment variable
  * new NodejsFunction(this, 'Function', {
  *   environment: { API_URL: apiUrl }
@@ -174,12 +174,12 @@ export function readParam(scope: Construct, parameterName: string): string {
  * Use this for reading sensitive parameters like API keys and secrets.
  *
  * @param _scope - CDK construct scope (unused but kept for API consistency)
- * @param parameterName - Full SSM parameter name (e.g., "/super-deals/dev/users-ms/private/apiKey")
+ * @param parameterName - Full SSM parameter name (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private/apiKey")
  * @returns Encrypted parameter value as CDK token (resolved at deployment)
  *
  * @example
  * // Read API key from encrypted SSM parameter
- * const apiKey = readSecureParam(this, "/super-deals/dev/users-ms/private/apiKey");
+ * const apiKey = readSecureParam(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private/apiKey");
  * // Use in Lambda environment variable (remains encrypted in CFN)
  * new NodejsFunction(this, 'Function', {
  *   environment: { API_KEY: apiKey }
@@ -207,20 +207,20 @@ export function readSecureParam(
  * Keys are appended to basePath to form the full parameter name.
  *
  * @param scope - CDK construct scope
- * @param basePath - Base path for all parameters (e.g., "/super-deals/dev/users-ms/public")
+ * @param basePath - Base path for all parameters (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public")
  * @param values - Key-value pairs to publish as parameters
  *
  * @example
  * // Publish public service configuration
- * publishStringParameters(this, "/super-deals/dev/users-ms/public", {
+ * publishStringParameters(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public", {
  *   apiUrl: "https://api.example.com",
  *   userPoolId: "us-east-1_ABC123",
  *   region: "us-east-1"
  * });
  * // Creates:
- * // - /super-deals/dev/users-ms/public/apiUrl = "https://api.example.com"
- * // - /super-deals/dev/users-ms/public/userPoolId = "us-east-1_ABC123"
- * // - /super-deals/dev/users-ms/public/region = "us-east-1"
+ * // - /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/apiUrl = "https://api.example.com"
+ * // - /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/userPoolId = "us-east-1_ABC123"
+ * // - /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/region = "us-east-1"
  *
  * @remarks
  * - Keys are sanitized to create valid CDK construct IDs
@@ -262,13 +262,13 @@ export interface IPublishSecureStringParametersOptions {
  * Uses CloudFormation property overrides to set SecureString type.
  *
  * @param scope - CDK construct scope
- * @param basePath - Base path for all parameters (e.g., "/super-deals/dev/users-ms/private")
+ * @param basePath - Base path for all parameters (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private")
  * @param values - Key-value pairs to publish as encrypted parameters
  * @param options - Optional configuration (KMS key ARN)
  *
  * @example
  * // Publish encrypted secrets with AWS managed key
- * publishSecureStringParameters(this, "/super-deals/dev/users-ms/private", {
+ * publishSecureStringParameters(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private", {
  *   apiKey: "secret-api-key",
  *   dbPassword: "secret-password"
  * });
@@ -277,7 +277,7 @@ export interface IPublishSecureStringParametersOptions {
  * // Publish encrypted secrets with custom KMS key
  * publishSecureStringParameters(
  *   this,
- *   "/super-deals/dev/users-ms/private",
+ *   "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private",
  *   { apiKey: "secret-api-key" },
  *   { encryptionKeyArn: "arn:aws:kms:us-east-1:123456789012:key/abc-123" }
  * );
@@ -328,21 +328,21 @@ export function publishSecureStringParameters(
  *
  * @template TSpec - Type of the parameter specification object
  * @param scope - CDK construct scope
- * @param basePath - Base path for all parameters (e.g., "/super-deals/dev/users-ms/public")
+ * @param basePath - Base path for all parameters (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public")
  * @param params - Object mapping keys to parameter path suffixes
  * @returns Object with same keys as params, values from SSM
  *
  * @example
  * // Read multiple public parameters
- * const bindings = readBindings(this, "/super-deals/dev/users-ms/public", {
+ * const bindings = readBindings(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public", {
  *   apiUrl: "api/baseUrl",
  *   userPoolId: "auth/userPoolId",
  *   region: "region"
  * });
  * // Returns: {
- * //   apiUrl: "<value from /super-deals/dev/users-ms/public/api/baseUrl>",
- * //   userPoolId: "<value from /super-deals/dev/users-ms/public/auth/userPoolId>",
- * //   region: "<value from /super-deals/dev/users-ms/public/region>"
+ * //   apiUrl: "<value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/api/baseUrl>",
+ * //   userPoolId: "<value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/auth/userPoolId>",
+ * //   region: "<value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/public/region>"
  * // }
  *
  * @remarks
@@ -375,21 +375,21 @@ export function readBindings<TSpec extends Record<string, string>>(
  *
  * @template TSpec - Type of the parameter specification object
  * @param scope - CDK construct scope
- * @param basePath - Base path for all parameters (e.g., "/super-deals/dev/users-ms/private")
+ * @param basePath - Base path for all parameters (e.g., "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private")
  * @param params - Object mapping keys to parameter path suffixes
  * @returns Object with same keys as params, encrypted values from SSM
  *
  * @example
  * // Read multiple encrypted parameters
- * const secrets = readSecureBindings(this, "/super-deals/dev/users-ms/private", {
+ * const secrets = readSecureBindings(this, "/{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private", {
  *   apiKey: "external/apiKey",
  *   dbPassword: "database/password",
  *   jwtSecret: "auth/jwtSecret"
  * });
  * // Returns: {
- * //   apiKey: "<encrypted value from /super-deals/dev/users-ms/private/external/apiKey>",
- * //   dbPassword: "<encrypted value from /super-deals/dev/users-ms/private/database/password>",
- * //   jwtSecret: "<encrypted value from /super-deals/dev/users-ms/private/auth/jwtSecret>"
+ * //   apiKey: "<encrypted value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private/external/apiKey>",
+ * //   dbPassword: "<encrypted value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private/database/password>",
+ * //   jwtSecret: "<encrypted value from /{{APP_BASE_PATH}}/dev/{{SERVICE_NAME}}/private/auth/jwtSecret>"
  * // }
  *
  * @remarks

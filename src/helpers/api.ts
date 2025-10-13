@@ -123,7 +123,11 @@ export function apiError(
     headers,
     body: JSON.stringify(body),
   };
-  console.log(`Error Response: ${JSON.stringify(response, null, 2)}`);
+
+  if (process.env.API_LOG_ERROR_RESPONSES === "true") {
+    console.log(`Error Response: ${JSON.stringify(response, null, 2)}`);
+  }
+
   return response;
 }
 

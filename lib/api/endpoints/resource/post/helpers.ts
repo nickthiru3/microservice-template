@@ -1,7 +1,7 @@
 /**
- * Deal Creation Helper Functions
+ * Primary resource creation helper functions
  *
- * Business logic layer for creating deals. Follows stratified design:
+ * Business logic layer for creating resources. Follows stratified design:
  * - Layer 1: Handler (orchestration) - handler.ts
  * - Layer 2: Business logic (this file) - helpers.ts
  * - Layer 3: Infrastructure (AWS SDK) - DynamoDB client
@@ -16,7 +16,7 @@
  * - Error handling
  * - Environment configuration
  *
- * @module lib/api/endpoints/deals/post/helpers
+ * @module lib/api/endpoints/resource/post/helpers
  */
 
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
@@ -29,8 +29,12 @@ import {
   serializeErr,
   type TApiResponse,
 } from "#src/helpers/api";
-import { dealPayloadSchema } from "./payload.schema";
-import type { TResult, TCreateDealPayload, IDealEntity } from "./types";
+import { resourcePayloadSchema } from "./payload.schema";
+import type {
+  TResult,
+  TCreateResourcePayload,
+  IResourceEntity,
+} from "./types";
 
 const ddbClient = new DynamoDBClient();
 
@@ -58,7 +62,7 @@ const ddbClient = new DynamoDBClient();
  */
 export function parseAndValidateBody(
   event: APIGatewayProxyEvent
-): TResult<TCreateDealPayload> {
+): TResult<TCreateResourcePayload> {
   if (!event.body) {
     return {
       ok: false,
@@ -74,7 +78,7 @@ export function parseAndValidateBody(
       response: apiError(400, "Invalid JSON in request body"),
     };
   }
-  const result = dealPayloadSchema.safeParse(parsed);
+  const result = resourcePayloadSchema.safeParse(parsed);
   if (!result.success) {
     return {
       ok: false,
@@ -85,7 +89,7 @@ export function parseAndValidateBody(
 }
 
 /**
- * Generates unique deal identifier
+ * Generates unique resource identifier
  *
  * Uses KSUID (K-Sortable Unique Identifier) for time-ordered unique IDs.
  * KSUIDs are sortable by creation time and globally unique.
@@ -93,7 +97,7 @@ export function parseAndValidateBody(
  * @returns KSUID string (e.g., "2D9RGmKVg3KKf7mJJQhWWqH9Gfm")
  *
  * @example
- * const dealId = generateDealId();
+ * const resourceId = generateResourceId();
  * // Returns: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
  *
  * @remarks
@@ -103,17 +107,17 @@ export function parseAndValidateBody(
  * - URL-safe (no special characters)
  * - 27 characters long
  */
-export function generateDealId(): string {
+export function generateResourceId(): string {
   return KSUID.randomSync(new Date()).string;
 }
 
 /**
  * Prepares successful API response
  *
- * Creates standardized success response with deal ID.
+ * Creates standardized success response with resource ID.
  * Logs response for debugging.
  *
- * @param dealId - Created deal identifier
+ * @param resourceId - Created resource identifier
  * @returns API Gateway success response (200)
  *
  * @example
@@ -122,15 +126,15 @@ export function generateDealId(): string {
  * //   statusCode: 200,
  * //   headers: { ... CORS headers ... },
  * //   body: JSON.stringify({
- * //     message: "Deal successfully created",
- * //     dealId: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
+ * //     message: "Resource successfully created",
+ * //     resourceId: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
  * //   })
  * // }
  */
-export function prepareSuccessResponse(dealId: string): TApiResponse {
+export function prepareSuccessResponse(resourceId: string): TApiResponse {
   const successResponse = apiSuccess({
-    message: "Deal successfully created",
-    dealId,
+    message: "Resource successfully created",
+    resourceId,
   });
   console.log(`Success Response: ${JSON.stringify(successResponse, null, 2)}`);
   return successResponse;
@@ -181,13 +185,13 @@ export function logEventReceived(event: APIGatewayProxyEvent) {
  * @remarks
  * Error handling:
  * - Extracts statusCode if present (defaults to 500)
- * - Extracts message if present (defaults to "Failed to create deal")
+ * - Extracts message if present (defaults to "Failed to create resource")
  * - Serializes error details safely (no stack traces)
  */
 export function prepareErrorResponse(err: unknown): TApiResponse {
   const anyErr = err as any;
   const status = typeof anyErr?.statusCode === "number" ? anyErr.statusCode : 500;
-  const message = anyErr?.message || "Failed to create deal";
+  const message = anyErr?.message || "Failed to create resource";
   const details = anyErr?.details ?? serializeErr(err);
   return apiError(status, message, details);
 }
@@ -222,13 +226,13 @@ export function getRequiredEnv(): TResult<{ tableName: string }> {
 }
 
 /**
- * Normalizes deal payload data
+ * Normalizes resource payload data
  *
  * Cleans and standardizes input data before validation.
  * Trims whitespace from string fields.
  *
- * @param data - Validated deal payload
- * @returns Normalized deal payload
+ * @param data - Validated resource payload
+ * @returns Normalized resource payload
  *
  * @example
  * const data = {
@@ -249,7 +253,9 @@ export function getRequiredEnv(): TResult<{ tableName: string }> {
  * - Trims logoFileKey
  * - originalPrice/discount already coerced to numbers by Zod
  */
-export function normalizeData(data: TCreateDealPayload): TCreateDealPayload {
+export function normalizeData(
+  data: TCreateResourcePayload
+): TCreateResourcePayload {
   return {
     ...data,
     title: data.title.trim(),
@@ -259,12 +265,12 @@ export function normalizeData(data: TCreateDealPayload): TCreateDealPayload {
 }
 
 /**
- * Validates business rules for deal data
+ * Validates business rules for resource data
  *
  * Performs business logic validation beyond schema validation.
  * Throws errors for invalid data (caught by handler).
  *
- * @param data - Normalized deal payload
+ * @param data - Normalized resource payload
  * @throws {Error} If expiration is less than 7 days from today
  *
  * @example
@@ -285,10 +291,10 @@ export function normalizeData(data: TCreateDealPayload): TCreateDealPayload {
  * @remarks
  * Business rules:
  * - Expiration must be at least 7 days from today (midnight)
- * - Ensures deals have reasonable lifetime
- * - Prevents accidental short-lived deals
+ * - Ensures resources have reasonable lifetime
+ * - Prevents accidental short-lived resources
  */
-export function validateData(data: TCreateDealPayload): void {
+export function validateData(data: TCreateResourcePayload): void {
   const expiresAt = Date.parse(data.expiration);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -300,31 +306,31 @@ export function validateData(data: TCreateDealPayload): void {
 }
 
 /**
- * Builds DynamoDB deal entity
+ * Builds DynamoDB resource entity
  *
  * Transforms API payload into DynamoDB item structure.
  * Adds partition/sort keys and metadata.
  *
- * @param data - Normalized and validated deal payload
- * @param dealId - Generated deal identifier
- * @returns DynamoDB deal entity
+ * @param data - Normalized and validated resource payload
+ * @param resourceId - Generated resource identifier
+ * @returns DynamoDB resource entity
  *
  * @example
  * const data = {
  *   userId: "user-123",
- *   title: "50% Off Pizza",
+ *   title: "Sample Title",
  *   originalPrice: 20,
  *   discount: 50,
  *   category: "foodDrink",
  *   expiration: "2025-12-31T23:59:59Z",
- *   logoFileKey: "logos/pizza.png"
+ *   logoFileKey: "media/sample.png"
  * };
- * const dealId = "2D9RGmKVg3KKf7mJJQhWWqH9Gfm";
- * const item = buildDealItem(data, dealId);
+ * const resourceId = "2D9RGmKVg3KKf7mJJQhWWqH9Gfm";
+ * const item = buildResourceItem(data, resourceId);
  * // Returns: {
- * //   PK: "DEAL#2D9RGmKVg3KKf7mJJQhWWqH9Gfm",
- * //   SK: "DEAL#2D9RGmKVg3KKf7mJJQhWWqH9Gfm",
- * //   EntityType: "Deal",
+ * //   PK: "RESOURCE#2D9RGmKVg3KKf7mJJQhWWqH9Gfm",
+ * //   SK: "RESOURCE#2D9RGmKVg3KKf7mJJQhWWqH9Gfm",
+ * //   EntityType: "Resource",
  * //   Id: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm",
  * //   Title: "50% Off Pizza",
  * //   OriginalPrice: 20,
@@ -338,20 +344,20 @@ export function validateData(data: TCreateDealPayload): void {
  *
  * @remarks
  * DynamoDB structure:
- * - PK: DEAL#{dealId} (partition key)
- * - SK: DEAL#{dealId} (sort key)
- * - EntityType: "Deal" (for type discrimination)
+ * - PK: RESOURCE#{resourceId} (partition key)
+ * - SK: RESOURCE#{resourceId} (sort key)
+ * - EntityType: "Resource" (for type discrimination)
  * - CreatedAt: Current timestamp (ISO 8601)
  */
-export function buildDealItem(
-  data: TCreateDealPayload,
-  dealId: string
-): IDealEntity {
+export function buildResourceItem(
+  data: TCreateResourcePayload,
+  resourceId: string
+): IResourceEntity {
   return {
-    PK: `DEAL#${dealId}`,
-    SK: `DEAL#${dealId}`,
-    EntityType: "Deal",
-    Id: dealId,
+    PK: `RESOURCE#${resourceId}`,
+    SK: `RESOURCE#${resourceId}`,
+    EntityType: "Resource",
+    Id: resourceId,
     Title: data.title,
     OriginalPrice: Number(data.originalPrice),
     Discount: Number(data.discount),
@@ -364,54 +370,52 @@ export function buildDealItem(
 }
 
 /**
- * Saves deal to DynamoDB
+ * Saves resource to DynamoDB
  *
- * Writes deal entity to DynamoDB with conditional write to prevent duplicates.
+ * Writes resource entity to DynamoDB with conditional write to prevent duplicates.
  * Returns Result type for type-safe error handling.
  *
  * @param tableName - DynamoDB table name
- * @param dealItem - Deal entity to save
+ * @param resourceItem - Resource entity to save
  * @returns Result with success boolean or error response
  *
  * @example
- * const result = await saveDealToDynamoDB("deals-table", dealItem);
+ * const result = await saveResourceToDynamoDB("resource-table", resourceItem);
  * if (!result.ok) {
  *   return result.response; // Error response
  * }
- * // Deal saved successfully
+ * // Resource saved successfully
  *
  * @remarks
  * Conditional write:
  * - Uses ConditionExpression to prevent overwrites
  * - Fails if PK and SK already exist
- * - Returns 409 Conflict if deal already exists
+ * - Returns 409 Conflict if the resource already exists
  *
  * Error handling:
- * - ConditionalCheckFailedException: 409 "Deal already exists"
- * - Other errors: 502 "Error saving deal" with error details
+ * - ConditionalCheckFailedException: 409 "Resource already exists"
+ * - Other errors: 502 "Error saving resource" with error details
  */
-export async function saveDealToDynamoDB(
+export async function saveResourceToDynamoDB(
   tableName: string,
-  dealItem: IDealEntity
+  resourceItem: IResourceEntity
 ): Promise<TResult<true>> {
   try {
     await ddbClient.send(
       new PutItemCommand({
         TableName: tableName,
-        Item: marshall(dealItem),
-        ConditionExpression:
-          "attribute_not_exists(#PK) AND attribute_not_exists(#SK)",
-        ExpressionAttributeNames: { "#PK": "PK", "#SK": "SK" },
+        Item: marshall(resourceItem),
+        ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)",
       })
     );
     return { ok: true, data: true };
   } catch (err: any) {
     if (err?.name === "ConditionalCheckFailedException") {
-      return { ok: false, response: apiError(409, "Deal already exists") };
+      return { ok: false, response: apiError(409, "Resource already exists") };
     }
     return {
       ok: false,
-      response: apiError(502, "Error saving deal", { message: err?.message }),
+      response: apiError(502, "Error saving resource", { message: err?.message }),
     };
   }
 }

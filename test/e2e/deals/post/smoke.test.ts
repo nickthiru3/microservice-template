@@ -11,17 +11,17 @@ const bearer = getBearerTokenIfAvailable(defaultProfile);
 const preconditionsOk = Boolean(resolvedApiUrl && bearer);
 const maybeDescribe = preconditionsOk ? describe : describe.skip;
 
-maybeDescribe("E2E: POST /deals", () => {
+maybeDescribe("E2E: POST /resource", () => {
   const client = request(resolvedApiUrl!);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
 
-  test("returns 200 with dealId on valid payload", async () => {
+  test("returns 200 with resourceId on valid payload", async () => {
     const body = {
       userId: "e2e-user",
-      title: `E2E Deal ${Date.now()}`,
+      title: `E2E Resource ${Date.now()}`,
       originalPrice: 123.45,
       discount: 15,
       logoFileKey: "e2e-logo.png",
@@ -29,10 +29,10 @@ maybeDescribe("E2E: POST /deals", () => {
       expiration: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
-    const res = await client.post("/deals").set(headers).send(body);
+    const res = await client.post("/resource").set(headers).send(body);
     expect([200, 201]).toContain(res.status); // allow 201 if service prefers Created later
-    expect(res.body).toHaveProperty("dealId");
-    expect(typeof res.body.dealId).toBe("string");
+    expect(res.body).toHaveProperty("resourceId");
+    expect(typeof res.body.resourceId).toBe("string");
   }, 20000);
 
   test("returns 400 on invalid payload (missing title)", async () => {
@@ -46,7 +46,7 @@ maybeDescribe("E2E: POST /deals", () => {
       expiration: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
     } as any;
 
-    const res = await client.post("/deals").set(headers).send(bad);
+    const res = await client.post("/resource").set(headers).send(bad);
     expect(res.status).toBe(400);
   }, 15000);
 });

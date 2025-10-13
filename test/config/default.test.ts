@@ -32,7 +32,7 @@ describe("config/default", () => {
 
   test("returns local defaults when ENV_NAME is local", () => {
     process.env.ENV_NAME = "local";
-    process.env.SERVICE_NAME = "deals-ms";
+    process.env.SERVICE_NAME = "resource-ms";
 
     const config = loadConfig();
 
@@ -44,25 +44,25 @@ describe("config/default", () => {
 
   test("uses CODESTAR_CONNECTION_ID env override for non-local", () => {
     process.env.ENV_NAME = "staging";
-    process.env.SERVICE_NAME = "deals-ms";
+    process.env.SERVICE_NAME = "resource-ms";
     process.env.AWS_ACCOUNT_ID = "123456789012";
     process.env.AWS_REGION = "us-east-1";
-    process.env.GITHUB_REPO = "nickthiru/super-deals";
+    process.env.GITHUB_REPO = "example-org/example-service";
     process.env.CODESTAR_CONNECTION_ID = "env-connection";
 
     const config = loadConfig();
 
     expect(config.envName).toBe("staging");
     expect(config.github?.codestarConnectionId).toBe("env-connection");
-    expect(config.github?.repo).toBe("nickthiru/super-deals");
+    expect(config.github?.repo).toBe("example-org/example-service");
   });
 
   test("falls back to SSM dynamic reference when CODestar env is missing", () => {
     process.env.ENV_NAME = "production";
-    process.env.SERVICE_NAME = "deals-ms";
+    process.env.SERVICE_NAME = "resource-ms";
     process.env.AWS_ACCOUNT_ID = "123456789012";
     process.env.AWS_REGION = "us-east-1";
-    process.env.GITHUB_REPO = "nickthiru/super-deals";
+    process.env.GITHUB_REPO = "example-org/example-service";
 
     const config = loadConfig();
 
@@ -73,7 +73,7 @@ describe("config/default", () => {
 
   test("respects APP_BASE_PATH for parameterStorePrefix", () => {
     process.env.ENV_NAME = "local";
-    process.env.SERVICE_NAME = "deals-ms";
+    process.env.SERVICE_NAME = "resource-ms";
     process.env.APP_BASE_PATH = "/custom/base";
 
     const config = loadConfig();
@@ -83,9 +83,9 @@ describe("config/default", () => {
 
   test("throws when AWS account ID missing in non-local env", () => {
     process.env.ENV_NAME = "staging";
-    process.env.SERVICE_NAME = "deals-ms";
+    process.env.SERVICE_NAME = "resource-ms";
     process.env.AWS_REGION = "us-east-1";
-    process.env.GITHUB_REPO = "nickthiru/super-deals";
+    process.env.GITHUB_REPO = "example-org/example-service";
 
     expect(() => loadConfig()).toThrow(/AWS account ID is required/);
   });

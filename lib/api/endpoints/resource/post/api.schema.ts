@@ -12,7 +12,7 @@ const categoryEnum = [
 ];
 
 const schema: JsonSchema = {
-  title: "CreateDealModel",
+  title: "CreateResourceModel",
   type: JsonSchemaType.OBJECT,
   required: [
     "userId",

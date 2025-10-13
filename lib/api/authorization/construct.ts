@@ -1,8 +1,11 @@
 import { Construct } from "constructs";
 import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { RestApi, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
-import PermissionsConstruct from "#lib/permissions/construct";
-import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
+import type {
+  IPermissionsProvider,
+  IResourceAuthOptions,
+} from "#lib/permissions/construct";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct";
 
 interface IAuthOptions {
   readonly authorizationType: AuthorizationType;
@@ -10,16 +13,10 @@ interface IAuthOptions {
   readonly authorizationScopes: string[];
 }
 
-interface IDealsAuthOptions {
-  readonly readDealsAuth: IAuthOptions;
-  readonly writeDealsAuth: IAuthOptions;
-  readonly deleteDealsAuth: IAuthOptions;
-}
-
 interface IAuthorizationConstructProps {
   readonly restApi: RestApi;
   readonly ssmBindings: SsmBindingsConstruct;
-  readonly permissions: PermissionsConstruct;
+  readonly permissions: IPermissionsProvider;
 }
 
 /**
@@ -29,7 +26,7 @@ interface IAuthorizationConstructProps {
 class AuthorizationConstruct extends Construct {
   authorizer: CognitoUserPoolsAuthorizer;
   authOptions: {
-    deals: IDealsAuthOptions;
+    primaryResource: IResourceAuthOptions;
   };
 
   constructor(
@@ -54,10 +51,10 @@ class AuthorizationConstruct extends Construct {
 
     // Get authorization options for different services
     this.authOptions = {
-      deals: permissions.oauth.getAuthOptions(
+      primaryResource: permissions.oauth.getAuthOptions(
         this.authorizer.authorizerId
-      ) as IDealsAuthOptions,
-      // Add more service auth options here as needed
+      ),
+      // Add more resource auth options here as needed
     };
   }
 }

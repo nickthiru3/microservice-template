@@ -1,8 +1,11 @@
 import { Construct } from "constructs";
 import { IUserPool, UserPool } from "aws-cdk-lib/aws-cognito";
 import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
-import type { IAuthBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
+
+interface IAuthBindings {
+  readonly userPoolId: string;
+}
 
 interface IAuthBindingsConstructProps {
   readonly config: IConfig;

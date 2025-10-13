@@ -1,7 +1,7 @@
 /**
  * Monitoring Infrastructure
  *
- * Creates CloudWatch monitoring resources for the deals microservice.
+ * Creates CloudWatch monitoring resources for the template service.
  * Currently provisions API Gateway alarms and dashboards.
  *
  * Architecture:
@@ -17,8 +17,14 @@
 
 import { Construct } from "constructs";
 import ApiMonitorConstruct from "./api/construct";
-import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
+import LambdaErrorAlarmsConstruct from "./alarms/lambda-errors/construct";
+import DynamoThrottlesAlarmsConstruct from "./alarms/dynamodb-throttles/construct";
+import S3FailureAlarmsConstruct from "./alarms/s3-failures/construct";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct";
 import type { IConfig } from "#config/default";
+import type { IFunction } from "aws-cdk-lib/aws-lambda";
+import type { TableV2 } from "aws-cdk-lib/aws-dynamodb";
+import type { Bucket } from "aws-cdk-lib/aws-s3";
 
 /**
  * Props for MonitorConstruct
@@ -26,15 +32,22 @@ import type { IConfig } from "#config/default";
  * @property config - Application configuration (env, service metadata)
  * @property ssmBindings - SSM bindings for sharing monitor outputs
  */
+export interface IMonitorTargets {
+  readonly lambdaFunctions?: IFunction[];
+  readonly dynamoTables?: TableV2[];
+  readonly buckets?: Bucket[];
+}
+
 interface IMonitorConstructProps {
   readonly config: IConfig;
   readonly ssmBindings: SsmBindingsConstruct;
+  readonly targets?: IMonitorTargets;
 }
 
 /**
  * Monitor Construct
  *
- * Orchestrates all monitoring resources for the deals microservice.
+ * Orchestrates all monitoring resources for the primary resource service.
  * Currently delegates to `ApiMonitorConstruct` for API Gateway metrics.
  *
  * @example
@@ -47,12 +60,36 @@ class MonitorConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IMonitorConstructProps) {
     super(scope, id);
 
-    const { config, ssmBindings } = props;
+    const { config, ssmBindings, targets } = props;
+    const lambdaFunctions = targets?.lambdaFunctions ?? [];
+    const dynamoTables = targets?.dynamoTables ?? [];
+    const buckets = targets?.buckets ?? [];
 
     new ApiMonitorConstruct(this, "ApiMonitorConstruct", {
       config,
       ssmBindings,
     });
+
+    if (config.features?.monitoringLambdaErrorsEnabled && lambdaFunctions.length) {
+      new LambdaErrorAlarmsConstruct(this, "LambdaErrorAlarmsConstruct", {
+        config,
+        lambdaFunctions,
+      });
+    }
+
+    if (config.features?.monitoringDynamoThrottlesEnabled && dynamoTables.length) {
+      new DynamoThrottlesAlarmsConstruct(this, "DynamoThrottlesAlarmsConstruct", {
+        config,
+        tables: dynamoTables,
+      });
+    }
+
+    if (config.features?.monitoringS3FailuresEnabled && buckets.length) {
+      new S3FailureAlarmsConstruct(this, "S3FailureAlarmsConstruct", {
+        config,
+        buckets,
+      });
+    }
   }
 }
 

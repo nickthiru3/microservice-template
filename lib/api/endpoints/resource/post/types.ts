@@ -1,18 +1,18 @@
 /**
- * Type Definitions for Deal Creation
+ * Type Definitions for primary resource creation
  *
- * Defines types and interfaces for creating deals in the system.
+ * Defines types and interfaces for creating the primary resource in the system.
  * Includes DynamoDB entity structure, API payload, and result types.
  *
- * @module lib/api/endpoints/deals/post/types
+ * @module lib/api/endpoints/resource/post/types
  */
 
 /**
- * Deal category enumeration
+ * Category enumeration
  *
- * Supported deal categories for classification and filtering.
+ * Supported resource categories for classification and filtering.
  */
-export type TDealCategory =
+export type TResourceCategory =
   | "foodDrink"
   | "bathroom"
   | "jewelery"
@@ -23,32 +23,32 @@ export type TDealCategory =
   | "travel";
 
 /**
- * DynamoDB Deal Entity
+ * DynamoDB resource entity
  *
- * Represents a deal as stored in DynamoDB using single-table design.
+ * Represents the resource as stored in DynamoDB using single-table design.
  *
- * @property PK - Partition key: `DEAL#{dealId}`
- * @property SK - Sort key: `DEAL#{dealId}`
- * @property EntityType - Always "Deal" for type discrimination
- * @property Id - Unique deal identifier (KSUID)
- * @property Title - Deal title/name
+ * @property PK - Partition key: `RESOURCE#{resourceId}`
+ * @property SK - Sort key: `RESOURCE#{resourceId}`
+ * @property EntityType - Always "Resource" for type discrimination
+ * @property Id - Unique resource identifier (KSUID)
+ * @property Title - Resource title/name
  * @property OriginalPrice - Original price before discount
  * @property Discount - Discount percentage (0-100)
- * @property Category - Deal category for filtering
- * @property Expiration - Deal expiration date (ISO 8601)
- * @property MerchantId - User ID of merchant who created the deal
- * @property LogoFileKey - S3 key for deal logo image
+ * @property Category - Resource category for filtering
+ * @property Expiration - Resource expiration date (ISO 8601)
+ * @property MerchantId - User ID associated with the resource
+ * @property LogoFileKey - S3 key for resource media
  * @property CreatedAt - Creation timestamp (ISO 8601)
  */
-export interface IDealEntity {
+export interface IResourceEntity {
   PK: string;
   SK: string;
-  EntityType: "Deal";
-  Id: string; // dealId
+  EntityType: "Resource";
+  Id: string; // resourceId
   Title: string;
   OriginalPrice: number;
   Discount: number; // percentage 0-100
-  Category: TDealCategory;
+  Category: TResourceCategory;
   Expiration: string; // ISO 8601
   MerchantId: string; // userId of merchant
   LogoFileKey: string;
@@ -56,29 +56,29 @@ export interface IDealEntity {
 }
 
 /**
- * Deal creation payload
+ * Resource creation payload
  *
- * Data structure for creating a new deal via API.
+ * Data structure for creating a new resource via API.
  * Validated against Zod schema before processing.
  *
  * @property userId - Merchant's user ID (from auth token)
- * @property title - Deal title (1-200 characters)
+ * @property title - Resource title (1-200 characters)
  * @property originalPrice - Original price (coerced to number by Zod)
  * @property discount - Discount percentage 0-100 (coerced to number by Zod)
- * @property category - Deal category
+ * @property category - Resource category
  * @property expiration - Expiration date (ISO 8601, must be 7+ days from now)
- * @property logoFileKey - S3 key for logo image
- * @property dealId - Optional deal ID (generated server-side if not provided)
+ * @property logoFileKey - S3 key for associated image
+ * @property resourceId - Optional resource ID (generated server-side if not provided)
  */
-export type TCreateDealPayload = {
+export type TCreateResourcePayload = {
   userId: string;
   title: string;
   originalPrice: number | string;
   discount: number | string;
-  category: TDealCategory;
+  category: TResourceCategory;
   expiration: string; // ISO
   logoFileKey: string;
-  dealId?: string;
+  resourceId?: string;
 };
 
 /**

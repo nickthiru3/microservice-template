@@ -12,9 +12,9 @@ describe("lib/permissions/oauth/construct", () => {
   beforeEach(() => {
     stack = createTestStack();
     resourceServer = createMockResourceServer([
-      "deals/read",
-      "deals/write",
-      "deals/delete",
+      "resource/read",
+      "resource/write",
+      "resource/delete",
     ]);
   });
 
@@ -38,20 +38,20 @@ describe("lib/permissions/oauth/construct", () => {
     const options = construct.getAuthOptions("auth-id-123");
 
     expect(options).toEqual({
-      readDealsAuth: {
+      readResourceAuth: {
         authorizationType: AuthorizationType.COGNITO,
         authorizer: { authorizerId: "auth-id-123" },
-        authorizationScopes: ["deals/read"],
+        authorizationScopes: ["resource/read"],
       },
-      writeDealsAuth: {
+      writeResourceAuth: {
         authorizationType: AuthorizationType.COGNITO,
         authorizer: { authorizerId: "auth-id-123" },
-        authorizationScopes: ["deals/write"],
+        authorizationScopes: ["resource/write"],
       },
-      deleteDealsAuth: {
+      deleteResourceAuth: {
         authorizationType: AuthorizationType.COGNITO,
         authorizer: { authorizerId: "auth-id-123" },
-        authorizationScopes: ["deals/delete"],
+        authorizationScopes: ["resource/delete"],
       },
     });
   });

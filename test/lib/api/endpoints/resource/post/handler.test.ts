@@ -16,11 +16,11 @@ jest.mock("@aws-sdk/client-dynamodb", () => {
 jest.mock("ksuid", () => ({
   __esModule: true,
   default: {
-    randomSync: () => ({ string: "TEST_DEAL_ID_123" }),
+    randomSync: () => ({ string: "TEST_RESOURCE_ID_123" }),
   },
 }));
 
-import { handler } from "#lib/api/endpoints/deals/post/handler";
+import { handler } from "#lib/api/endpoints/resource/post/handler";
 
 function makeEvent(body: any): APIGatewayProxyEvent {
   return {
@@ -29,19 +29,19 @@ function makeEvent(body: any): APIGatewayProxyEvent {
     multiValueHeaders: {},
     httpMethod: "POST",
     isBase64Encoded: false,
-    path: "/deals",
+    path: "/resource",
     pathParameters: null,
     queryStringParameters: null,
     multiValueQueryStringParameters: null,
     stageVariables: null,
-    resource: "/deals",
+    resource: "/resource",
     requestContext: {} as any,
   };
 }
 
 const validBody = {
   userId: "user-1",
-  title: " Test Deal ",
+  title: " Test Resource ",
   originalPrice: 100,
   discount: 10,
   logoFileKey: " logo.png ",
@@ -50,17 +50,17 @@ const validBody = {
   expiration: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
 };
 
-describe("POST /deals handler (behavior)", () => {
+describe("POST /resource handler (behavior)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    process.env.TABLE_NAME = "DealsTable";
+    process.env.TABLE_NAME = "ResourceTable";
   });
 
   afterEach(() => {
     delete process.env.TABLE_NAME;
   });
 
-  test("returns 200 on success with generated dealId", async () => {
+  test("returns 200 on success with generated resourceId", async () => {
     sendMock.mockResolvedValueOnce({});
 
     const res = await handler(makeEvent(validBody));
@@ -68,8 +68,8 @@ describe("POST /deals handler (behavior)", () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
     expect(body).toMatchObject({
-      message: "Deal successfully created",
-      dealId: "TEST_DEAL_ID_123",
+      message: "Resource successfully created",
+      resourceId: "TEST_RESOURCE_ID_123",
     });
   });
 
@@ -79,7 +79,7 @@ describe("POST /deals handler (behavior)", () => {
     const res = await handler(makeEvent(validBody));
 
     expect(res.statusCode).toBe(409);
-    expect(JSON.parse(res.body).error).toBe("Deal already exists");
+    expect(JSON.parse(res.body).error).toBe("Resource already exists");
   });
 
   test("returns 502 on DynamoDB error", async () => {
@@ -89,7 +89,7 @@ describe("POST /deals handler (behavior)", () => {
 
     expect(res.statusCode).toBe(502);
     const body = JSON.parse(res.body);
-    expect(body.error).toBe("Error saving deal");
+    expect(body.error).toBe("Error saving resource");
     expect(body.details?.message).toBe("boom");
   });
 

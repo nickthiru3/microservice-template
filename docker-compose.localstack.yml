@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   localstack:
-    container_name: super-deals-localstack
+    container_name: template-localstack
     image: localstack/localstack:latest
     ports:
       - "4566:4566"            # LocalStack Gateway
@@ -39,7 +39,7 @@ services:
   # Optional: LocalStack Web UI (Pro feature, but useful for debugging)
   # Uncomment if you have LocalStack Pro or want to try the free trial
   # localstack-ui:
-  #   container_name: super-deals-localstack-ui
+  #   container_name: template-localstack-ui
   #   image: localstack/localstack-ui:latest
   #   ports:
   #     - "8080:3000"

@@ -1,8 +1,11 @@
 import { Construct } from "constructs";
 import { Role, IRole } from "aws-cdk-lib/aws-iam";
 import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
-import type { IIamBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
+
+interface IIamBindings {
+  readonly merchantRoleArn: string;
+}
 
 interface IIamBindingsConstructProps {
   readonly config: IConfig;

@@ -1,7 +1,10 @@
 import { Construct } from "constructs";
 import SsmBindingsUtilConstruct from "#lib/utils/ssm-bindings/construct";
-import type { IMonitorBindings } from "@super-deals/infra-contracts";
 import type { IConfig } from "#config/default";
+
+interface IMonitorBindings {
+  readonly slackWebhookUrl: string;
+}
 
 interface IMonitorBindingsConstructProps {
   readonly config: IConfig;

@@ -1,21 +1,21 @@
 post:
-  operationId: CreateDeal
-  summary: Merchant can add a deal to his catalog
+  operationId: CreateResource
+  summary: Merchant can add a resource to the catalog
   tags:
-    - deals
-  description: Merchant can add a deal to his catalog
+    - resource
+  description: Merchant can add a resource to the catalog
   security:
     # []
     - jwt: []
 
   requestBody:
     required: true
-    description: The deal to add
+    description: The resource to add
     content:
       application/json:
         schema:
           type: object
-          description: Form data for adding a deal to a merchant's catalog
+          description: Form data for adding a resource to a merchant's catalog
           required:
             - merchantId
             - title
@@ -27,26 +27,26 @@ post:
           properties:
             merchantId:
               type: string
-              description: ID of merchant who created the deal
+              description: ID of merchant who created the resource
             title:
               type: string
-              description: Title of the deal
+              description: Title of the resource
               maxLength: 255
             originalPrice:
               type: number
-              description: Original price of the deal
+              description: Original price of the resource
               minimum: 0
             discount:
               type: number
-              description: Deal discount
+              description: Resource discount
               minimum: 0
               maximum: 100
             logoUrl:
               type: string
-              description: S3 Bucket URL for Logo image of the deal
+              description: S3 Bucket URL for logo image of the resource
             category:
               type: string
-              description: The category this deal falls under
+              description: The category this resource falls under
               enum:
                 - foodDrink
                 - bathroom
@@ -60,33 +60,33 @@ post:
               type: string
               format: date
               description: >
-                The expiration date of the deal. Must be a valid date in YYYY-MM-DD format.
+                The expiration date of the resource. Must be a valid date in YYYY-MM-DD format.
                 Must be at least seven days from today's date.
 
   responses:
     "200":
-      description: Successfully added the deal
+      description: Successfully added the resource
       content:
         application/json:
           schema:
             type: object
             required:
               - message
-              - dealId
+              - resourceId
             properties:
               message:
                 type: string
-                example: "Deal successfully added"
-              dealId:
+                example: "Resource successfully added"
+              resourceId:
                 type: string
-                example: "1yn5w7gKp8d7L2M3v4e5T9a6B"
+                example: "RESOURCE12345"
 
   x-amazon-apigateway-request-validator: body
 
   x-amazon-apigateway-integration:
     type: aws_proxy
     httpMethod: POST
-    uri: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateDeal}/invocations
+    uri: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateResource}/invocations
     # responses:
     #   default:
     #     statusCode: "200"

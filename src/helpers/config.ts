@@ -54,8 +54,8 @@ export const makeEnv = (env: string, cfg: IConfig) =>
  * makeTags("production", config, "service-only")
  * // Returns: {
  * //   Environment: "production",
- * //   Service: "deals-ms",
- * //   ServiceDisplayName: "Deals Microservice",
+ * //   Service: "resource-ms",
+ * //   ServiceDisplayName: "Resource Microservice",
  * //   StackType: "service-only"
  * // }
  *

@@ -2,16 +2,16 @@
  * DynamoDB Database Infrastructure
  *
  * Creates DynamoDB table using single-table design pattern.
- * Stores all deal-related entities in one table with GSI for flexible querying.
+ * Stores all primary resource entities in one table with GSI for flexible querying.
  *
  * Table Schema:
  * - Primary Key: PK (partition key), SK (sort key)
  * - GSI1: GSI1PK (partition key), GSI1SK (sort key)
  *
  * Entity Patterns:
- * - Deal: PK=DEAL#{dealId}, SK=DEAL#{dealId}
- * - Future: Merchant deals: GSI1PK=MERCHANT#{merchantId}, GSI1SK=DEAL#{dealId}
- * - Future: Category deals: GSI1PK=CATEGORY#{category}, GSI1SK=DEAL#{dealId}
+ * - Resource: PK=RESOURCE#{resourceId}, SK=RESOURCE#{resourceId}
+ * - Future: Merchant resources: GSI1PK=MERCHANT#{merchantId}, GSI1SK=RESOURCE#{resourceId}
+ * - Future: Category resources: GSI1PK=CATEGORY#{category}, GSI1SK=RESOURCE#{resourceId}
  *
  * Features:
  * - Point-in-time recovery enabled
@@ -23,7 +23,7 @@
 
 import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { TableV2, AttributeType } from "aws-cdk-lib/aws-dynamodb";
+import { TableV2, AttributeType, StreamViewType } from "aws-cdk-lib/aws-dynamodb";
 import type { IConfig } from "#config/default";
 
 /**
@@ -38,7 +38,7 @@ export interface IDatabaseConstructProps {
 /**
  * Database Construct
  *
- * Creates DynamoDB table with single-table design for deals microservice.
+ * Creates DynamoDB table with single-table design for the primary resource.
  * Includes GSI for flexible querying patterns.
  *
  * @example
@@ -86,6 +86,8 @@ class DatabaseConstruct extends Construct {
     const shouldProtectFromDeletion = envName !== "local" && envName !== "dev";
 
     // Create DynamoDB table with single-table design
+    const enableStreams = config.features?.dynamodbStreamsEnabled ?? false;
+
     this.table = new TableV2(this, "Table", {
       // Primary key for main access patterns
       partitionKey: {
@@ -97,7 +99,7 @@ class DatabaseConstruct extends Construct {
         type: AttributeType.STRING,
       },
 
-      // GSI1 for alternate query patterns (merchant deals, category deals)
+      // GSI1 for alternate query patterns (merchant resources, category resources)
       globalSecondaryIndexes: [
         {
           indexName: "GSI1",
@@ -121,6 +123,7 @@ class DatabaseConstruct extends Construct {
       removalPolicy: shouldProtectFromDeletion
         ? RemovalPolicy.RETAIN
         : RemovalPolicy.DESTROY,
+      dynamoStream: enableStreams ? StreamViewType.NEW_AND_OLD_IMAGES : undefined,
     });
 
     const tableName = this.table.tableName;

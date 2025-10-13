@@ -1,7 +1,7 @@
 /**
- * Zod Validation Schema for Deal Creation
+ * Zod validation schema for primary resource creation
  *
- * Defines runtime validation rules for deal creation payloads.
+ * Defines runtime validation rules for resource creation payloads.
  * Provides type-safe validation with automatic type inference.
  *
  * Features:
@@ -10,14 +10,14 @@
  * - Custom validation rules
  * - Detailed error messages
  *
- * @module lib/api/endpoints/deals/post/payload.schema
+ * @module lib/api/endpoints/resource/post/payload.schema
  */
 
 import { z } from "zod";
-import type { TDealCategory } from "./types";
+import type { TResourceCategory } from "./types";
 
 /**
- * Deal category enumeration for Zod validation
+ * Resource category enumeration for Zod validation
  *
  * Readonly array of valid deal categories.
  * Used by Zod enum validator to ensure category is valid.
@@ -31,12 +31,12 @@ export const categoryEnum = [
   "auto",
   "entertainment",
   "travel",
-] as const satisfies Readonly<TDealCategory[]>;
+] as const satisfies Readonly<TResourceCategory[]>;
 
 /**
- * Deal creation payload validation schema
+ * Resource creation payload validation schema
  *
- * Validates and transforms deal creation requests.
+ * Validates and transforms resource creation requests.
  * Automatically coerces string numbers to actual numbers.
  *
  * Validation Rules:
@@ -59,7 +59,7 @@ export const categoryEnum = [
  *   category: "foodDrink",
  *   expiration: "2025-12-31T23:59:59Z"
  * };
- * const result = dealPayloadSchema.safeParse(payload);
+ * const result = resourcePayloadSchema.safeParse(payload);
  * if (result.success) {
  *   console.log(result.data); // Validated and transformed data
  * }
@@ -67,12 +67,12 @@ export const categoryEnum = [
  * @example
  * // Invalid payload
  * const invalid = { title: "" }; // Missing required fields
- * const result = dealPayloadSchema.safeParse(invalid);
+ * const result = resourcePayloadSchema.safeParse(invalid);
  * if (!result.success) {
  *   console.log(result.error.flatten()); // Detailed error messages
  * }
  */
-export const dealPayloadSchema = z.object({
+export const resourcePayloadSchema = z.object({
   userId: z.string().min(1),
   title: z.string().min(1).max(255),
   originalPrice: z.coerce.number().gte(1),
@@ -94,7 +94,7 @@ export const dealPayloadSchema = z.object({
  * Ensures type definitions stay in sync with validation rules.
  *
  * @remarks
- * This type is automatically inferred from dealPayloadSchema.
+ * This type is automatically inferred from resourcePayloadSchema.
  * Any changes to the schema automatically update this type.
  */
-export type TCreateDealPayload = z.infer<typeof dealPayloadSchema>;
+export type TCreateResourcePayload = z.infer<typeof resourcePayloadSchema>;

@@ -3,7 +3,7 @@ import ResourceServerConstruct from "./resource-server/construct";
 import OAuthConstruct from "./oauth/construct";
 import PoliciesConstruct from "./policies/construct";
 import StorageConstruct from "#lib/storage/construct";
-import SsmBindingsConstruct from "#lib/ssm-bindings/construct.js";
+import SsmBindingsConstruct from "#lib/ssm-bindings/construct";
 import type { IConfig } from "#config/default";
 import { AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 
@@ -13,15 +13,15 @@ export interface IAuthOptions {
   readonly authorizationScopes: string[];
 }
 
-export interface IUsersAuthOptions {
-  readonly readUsersAuth: IAuthOptions;
-  readonly writeUsersAuth: IAuthOptions;
-  readonly deleteUsersAuth: IAuthOptions;
+export interface IResourceAuthOptions {
+  readonly readResourceAuth: IAuthOptions;
+  readonly writeResourceAuth: IAuthOptions;
+  readonly deleteResourceAuth: IAuthOptions;
 }
 
 export interface IPermissionsProvider {
   readonly oauth: {
-    getAuthOptions(authorizerId: string): IUsersAuthOptions;
+    getAuthOptions(authorizerId: string): IResourceAuthOptions;
   };
 }
 
@@ -35,8 +35,10 @@ interface IPermissionsConstructProps {
  * Stack for managing identity-based permissions
  * Handles attaching policies to roles for accessing various resources
  */
-class PermissionsConstruct extends Construct {
-  readonly oauth: OAuthConstruct;
+class PermissionsConstruct extends Construct implements IPermissionsProvider {
+  readonly oauth: {
+    getAuthOptions(authorizerId: string): IResourceAuthOptions;
+  };
 
   constructor(scope: Construct, id: string, props: IPermissionsConstructProps) {
     super(scope, id);
@@ -53,9 +55,14 @@ class PermissionsConstruct extends Construct {
     );
 
     // OAuth permissions integrated with existing UserPool Resource Server wrapper
-    this.oauth = new OAuthConstruct(this, "OAuthConstruct", {
+    const oauthConstruct = new OAuthConstruct(this, "OAuthConstruct", {
       resourceServer,
     });
+
+    this.oauth = {
+      getAuthOptions: (authorizerId: string): IResourceAuthOptions =>
+        oauthConstruct.getAuthOptions(authorizerId),
+    };
 
     new PoliciesConstruct(this, "PoliciesConstruct", {
       config,
@@ -66,3 +73,21 @@ class PermissionsConstruct extends Construct {
 }
 
 export default PermissionsConstruct;
+
+export class NoopPermissionsConstruct implements IPermissionsProvider {
+  readonly oauth = {
+    getAuthOptions: (authorizerId: string): IResourceAuthOptions => {
+      const base: IAuthOptions = {
+        authorizationType: AuthorizationType.COGNITO,
+        authorizer: { authorizerId },
+        authorizationScopes: [],
+      };
+
+      return {
+        readResourceAuth: { ...base },
+        writeResourceAuth: { ...base },
+        deleteResourceAuth: { ...base },
+      };
+    },
+  };
+}

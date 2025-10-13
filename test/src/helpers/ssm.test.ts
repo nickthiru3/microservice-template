@@ -8,6 +8,7 @@ import {
   readSecureParam,
   readSecureBindings,
 } from "#src/helpers/ssm";
+import config from "#config/default";
 
 // Mock aws-cdk-lib SecretValue and aws-ssm helpers so we don't require real CDK constructs
 jest.mock("aws-cdk-lib", () => ({
@@ -77,30 +78,46 @@ describe("src/helpers/ssm", () => {
     StringParameter.instances.length = 0;
   });
 
-  test("buildSsm*Path constructs normalized paths", () => {
-    // Default app base path comes from config, but the function adds service/env and visibility
-    const pub = buildSsmPublicPath("dev", "deals-ms");
-    const priv = buildSsmPrivatePath("dev", "deals-ms");
+  const appBasePath = config.parameterStorePrefix || "{{APP_BASE_PATH}}";
+  const defaultServiceName = config.service.name || "{{SERVICE_NAME}}";
 
-    expect(pub).toContain("/dev/deals-ms/public");
-    expect(priv).toContain("/dev/deals-ms/private");
+  const normalize = (value: string) => value.replace(/\/{2,}/g, "/");
+
+  test("buildSsm*Path constructs normalized paths", () => {
+    const pub = buildSsmPublicPath("dev", defaultServiceName);
+    const priv = buildSsmPrivatePath("dev", defaultServiceName);
+
+    expect(normalize(pub)).toBe(
+      normalize(`${appBasePath}/dev/${defaultServiceName}/public`)
+    );
+    expect(normalize(priv)).toBe(
+      normalize(`${appBasePath}/dev/${defaultServiceName}/private`)
+    );
   });
 
   test("readParam returns mocked stringValue for given name", () => {
-    const val = readParam(scope, "/super-deals/dev/deals-ms/public/ApiUrl");
-    expect(val).toBe("VALUE_FOR:/super-deals/dev/deals-ms/public/ApiUrl");
+    const parameterName = normalize(
+      `${appBasePath}/dev/${defaultServiceName}/public/ApiUrl`
+    );
+    const val = readParam(scope, parameterName);
+    expect(val).toBe(`VALUE_FOR:${parameterName}`);
   });
 
   test("readBindings maps params to hierarchical suffixes under base path", () => {
-    const base = "/super-deals/dev/deals-ms/private";
+    const base = normalize(
+      `${appBasePath}/dev/${defaultServiceName}/private`
+    );
     const out = readBindings(scope, base, {
-      dealsTableName: "Db/TableName",
+      resourceTableName: "Db/TableName",
       auditLogEventBusArn: "Events/Buses/AuditLog/Arn",
     });
     expect(out).toEqual({
-      dealsTableName: "VALUE_FOR:/super-deals/dev/deals-ms/private/Db/TableName",
-      auditLogEventBusArn:
-        "VALUE_FOR:/super-deals/dev/deals-ms/private/Events/Buses/AuditLog/Arn",
+      resourceTableName: `VALUE_FOR:${normalize(
+        `${base}/Db/TableName`
+      )}`,
+      auditLogEventBusArn: `VALUE_FOR:${normalize(
+        `${base}/Events/Buses/AuditLog/Arn`
+      )}`,
     });
   });
 
@@ -131,7 +148,7 @@ describe("src/helpers/ssm", () => {
     );
 
     // Verify addPropertyOverride was called to set SecureString type
-    const cfnParameter = StringParameter.instances[0].node.defaultChild;
+    const cfnParameter = StringParameter.instances[0].node.defaultChild as any;
     expect(cfnParameter.addPropertyOverride).toHaveBeenCalledWith("Type", "SecureString");
     expect(cfnParameter.addPropertyOverride).toHaveBeenCalledWith("KeyId", "arn:aws:kms:region:acct:key/id");
     
@@ -140,20 +157,26 @@ describe("src/helpers/ssm", () => {
   });
 
   test("readSecureParam returns mocked secure value", () => {
-    const val = readSecureParam(scope, "/super-deals/dev/platform/private/monitor/slack/webhookUrl");
-    expect(val).toBe("SECURE_VALUE_FOR:/super-deals/dev/platform/private/monitor/slack/webhookUrl");
+    const parameterName = normalize(
+      `${appBasePath}/dev/platform/private/monitor/slack/webhookUrl`
+    );
+    const val = readSecureParam(scope, parameterName);
+    expect(val).toBe(`SECURE_VALUE_FOR:${parameterName}`);
   });
 
   test("readSecureBindings maps params to secure reads under base path", () => {
-    const base = "/super-deals/dev/platform/private";
+    const base = normalize(`${appBasePath}/dev/platform/private`);
     const out = readSecureBindings(scope, base, {
       slackWebhookUrl: "monitor/slack/webhookUrl",
       incidentWebhookUrl: "monitor/slack/incidentWebhookUrl",
     });
     expect(out).toEqual({
-      slackWebhookUrl: "SECURE_VALUE_FOR:/super-deals/dev/platform/private/monitor/slack/webhookUrl",
-      incidentWebhookUrl:
-        "SECURE_VALUE_FOR:/super-deals/dev/platform/private/monitor/slack/incidentWebhookUrl",
+      slackWebhookUrl: `SECURE_VALUE_FOR:${normalize(
+        `${base}/monitor/slack/webhookUrl`
+      )}`,
+      incidentWebhookUrl: `SECURE_VALUE_FOR:${normalize(
+        `${base}/monitor/slack/incidentWebhookUrl`
+      )}`,
     });
   });
 });

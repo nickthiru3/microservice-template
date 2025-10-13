@@ -30,7 +30,7 @@ async function readPublicBindingsFromSSM(): Promise<Record<string, any> | null> 
 export const handler = async () => {
   const ssmBindings = await readPublicBindingsFromSSM();
   const fallback = {
-    service: 'deals-ms',
+    service: env('SERVICE_NAME', 'resource-ms'),
     env: env('ENV_NAME'),
     region: env('AWS_REGION') || env('REGION'),
     api: {

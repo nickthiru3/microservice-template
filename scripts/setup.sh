@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Setting up Super Deals - Deals Microservice..."
+echo "🚀 Setting up the microservice template..."
 
 # Check for Node.js
 if ! command -v node &> /dev/null; then

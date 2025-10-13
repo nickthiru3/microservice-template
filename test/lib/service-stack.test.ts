@@ -42,7 +42,7 @@ describe("ServiceStack (infrastructure)", () => {
   const envName = "dev";
   const account = "123456789012";
   const region = "us-east-1";
-  const serviceName = "deals";
+  const serviceName = "resource";
 
   const config: IConfig = {
     envName,
@@ -76,7 +76,7 @@ describe("ServiceStack (infrastructure)", () => {
     template.hasResourceProperties("AWS::Lambda::Function", Match.objectLike({
       Environment: Match.objectLike({
         Variables: Match.objectLike({
-          // Expect a CloudFormation dynamic reference to SSM SecureString, e.g. {{resolve:ssm-secure:/super-deals/dev/platform/private/monitor/slack/webhookUrl}}
+          // Expect a CloudFormation dynamic reference to SSM SecureString (placeholder path values)
           SLACK_WEBHOOK_URL: Match.stringLikeRegexp("ssm-secure:.*monitor/slack/webhookUrl"),
         }),
       }),
@@ -113,7 +113,7 @@ describe("ServiceStack (infrastructure)", () => {
     }));
   });
 
-  test("configures validation GatewayResponse, RequestValidator and Model for POST /deals", () => {
+  test("configures validation GatewayResponse, RequestValidator and Model for POST /resource", () => {
     const template = Template.fromStack(stack);
 
     // GatewayResponse for BAD_REQUEST_BODY
@@ -137,7 +137,7 @@ describe("ServiceStack (infrastructure)", () => {
     });
   });
 
-  test("exposes POST /deals method with authorizer and request model", () => {
+  test("exposes POST /resource method with authorizer and request model", () => {
     const template = Template.fromStack(stack);
 
     // Method for POST exists with authorizer and request models
@@ -155,7 +155,7 @@ describe("ServiceStack (infrastructure)", () => {
     }));
   });
 
-  test("creates Lambda for CreateDeal with env and least-privilege IAM", () => {
+  test("creates Lambda for resource POST handler with env and least-privilege IAM", () => {
     const template = Template.fromStack(stack);
 
     // Lambda function properties

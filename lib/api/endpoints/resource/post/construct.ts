@@ -20,11 +20,11 @@ import schema from "./api.schema";
 interface IPostConstructProps {
   readonly apiProps: IApiProps;
   readonly db: DatabaseConstruct;
-  readonly dealsResource: IResource;
+  readonly resource: IResource;
 }
 
 class PostConstruct extends Construct {
-  dealModel: Model;
+  requestModel: Model;
   requestValidator: RequestValidator;
   validationErrorResponse: GatewayResponse;
   lambda: NodejsFunction;
@@ -32,7 +32,7 @@ class PostConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IPostConstructProps) {
     super(scope, id);
 
-    const { apiProps, db, dealsResource } = props;
+    const { apiProps, db, resource } = props;
 
     this.createModelsForRequestValidation(apiProps, schema);
     this.createRequestValidator(apiProps);
@@ -40,15 +40,15 @@ class PostConstruct extends Construct {
     this.createLambdaFunction(db);
     this.addApiMethodWithLambdaIntegrationAndRequestValidation(
       apiProps,
-      dealsResource
+      resource
     );
   }
 
   createModelsForRequestValidation(apiProps: IApiProps, schema: JsonSchema) {
-    this.dealModel = new Model(this, `DealModel`, {
+    this.requestModel = new Model(this, `{{RESOURCE_PASCAL_NAME}}RequestModel`, {
       restApi: apiProps.restApi,
       contentType: "application/json",
-      description: "Validation model for create deals form",
+      description: "Validation model for create resource request",
       schema,
     });
   }
@@ -118,15 +118,15 @@ class PostConstruct extends Construct {
 
   addApiMethodWithLambdaIntegrationAndRequestValidation(
     api: IApiProps,
-    dealsResource: IResource
+    resource: IResource
   ) {
-    dealsResource.addMethod("POST", new LambdaIntegration(this.lambda), {
-      operationName: "CreateDeal",
+    resource.addMethod("POST", new LambdaIntegration(this.lambda), {
+      operationName: "Create{{RESOURCE_PASCAL_NAME}}",
       requestValidator: this.requestValidator,
       requestModels: {
-        "application/json": this.dealModel,
+        "application/json": this.requestModel,
       },
-      ...api.optionsWithAuth.deals.writeDealsAuth,
+      ...api.optionsWithAuth.primaryResource.writeResourceAuth,
     });
   }
 }

@@ -4,7 +4,7 @@ describe("src/helpers/config", () => {
   const cfg = {
     region: "us-east-1",
     accountId: "123456789012",
-    service: { name: "deals-ms", displayName: "Deals Service" },
+    service: { name: "resource-ms", displayName: "Resource Service" },
   } as any;
 
   test("makeEnv returns local defaults when env is local", () => {
@@ -21,8 +21,8 @@ describe("src/helpers/config", () => {
     const tags = makeTags("dev", cfg, "ServiceStack");
     expect(tags).toMatchObject({
       Environment: "dev",
-      Service: "deals-ms",
-      ServiceDisplayName: "Deals Service",
+      Service: "resource-ms",
+      ServiceDisplayName: "Resource Service",
       StackType: "ServiceStack",
     });
   });

@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import BindingsConstruct from "./bindings/construct";
-import DealsConstruct from "./deals/construct";
+import ResourceEndpointsConstruct from "./resource/construct";
 import DatabaseConstruct from "#lib/db/construct";
 import type { IApiProps } from "#lib/api/construct";
 import type { IConfig } from "#config/default";
@@ -22,7 +22,7 @@ class EndpointsConstruct extends Construct {
       apiProps,
     });
 
-    new DealsConstruct(this, "DealsConstruct", {
+    new ResourceEndpointsConstruct(this, "ResourceEndpointsConstruct", {
       apiProps,
       db,
     });

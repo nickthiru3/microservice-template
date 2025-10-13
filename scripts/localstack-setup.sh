@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# LocalStack Setup Script for Super Deals Microservice
+# LocalStack Setup Script for Microservice Template
 # This script sets up LocalStack for local AWS development
 
 set -e
 
-echo "🐳 Setting up LocalStack for Super Deals Microservice..."
+echo "🐳 Setting up LocalStack for the microservice template..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -153,8 +153,8 @@ display_info() {
 
 # Main execution
 main() {
-    echo "🏗️  Super Deals Microservice - LocalStack Setup"
-    echo "=============================================="
+    echo "🏗️  Microservice Template - LocalStack Setup"
+    echo "==========================================="
     echo ""
     
     check_docker

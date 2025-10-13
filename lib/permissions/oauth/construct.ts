@@ -12,19 +12,19 @@ export interface IAuthOptions {
   readonly authorizationScopes: string[];
 }
 
-export interface IDealsAuthOptions {
-  readonly readDealsAuth: IAuthOptions;
-  readonly writeDealsAuth: IAuthOptions;
-  readonly deleteDealsAuth: IAuthOptions;
+export interface IResourceAuthOptions {
+  readonly readResourceAuth: IAuthOptions;
+  readonly writeResourceAuth: IAuthOptions;
+  readonly deleteResourceAuth: IAuthOptions;
 }
 
 export interface IPermissionsProvider {
-  readonly getAuthOptions: (authorizerId: string) => IDealsAuthOptions;
+  readonly getAuthOptions: (authorizerId: string) => IResourceAuthOptions;
 }
 
 /**
- * Construct for managing OAuth permissions specific to deals
- * Defines scopes for deal-related operations
+ * Construct for managing OAuth permissions specific to the primary resource
+ * Defines scopes for resource-related operations
  */
 class OAuthConstruct extends Construct implements IPermissionsProvider {
   public readonly resourceServer: ResourceServerConstruct;
@@ -36,7 +36,7 @@ class OAuthConstruct extends Construct implements IPermissionsProvider {
     this.resourceServer = resourceServer;
   }
 
-  getAuthOptions(authorizerId: string): IDealsAuthOptions {
+  getAuthOptions(authorizerId: string): IResourceAuthOptions {
     const slashScopes = this.resourceServer.getOAuthScopes();
 
     const baseAuth = {
@@ -45,15 +45,15 @@ class OAuthConstruct extends Construct implements IPermissionsProvider {
     };
 
     return {
-      readDealsAuth: {
+      readResourceAuth: {
         ...baseAuth,
         authorizationScopes: slashScopes.filter((s) => s.endsWith("/read")),
       },
-      writeDealsAuth: {
+      writeResourceAuth: {
         ...baseAuth,
         authorizationScopes: slashScopes.filter((s) => s.endsWith("/write")),
       },
-      deleteDealsAuth: {
+      deleteResourceAuth: {
         ...baseAuth,
         authorizationScopes: slashScopes.filter((s) => s.endsWith("/delete")),
       },

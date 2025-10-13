@@ -1,7 +1,7 @@
 /**
- * POST /deals Handler
+ * POST /resource handler
  *
- * Lambda handler for creating new deals. Follows stratified design:
+ * Lambda handler for creating new resources. Follows stratified design:
  * - This file: Pure orchestration (Layer 1)
  * - helpers.ts: Business logic (Layer 2)
  * - AWS SDK: Infrastructure (Layer 3)
@@ -11,7 +11,7 @@
  * 2. Get required environment variables
  * 3. Normalize data (trim whitespace)
  * 4. Validate business rules (expiration >= 7 days)
- * 5. Generate unique deal ID (KSUID)
+ * 5. Generate unique resource ID (KSUID)
  * 6. Build DynamoDB item
  * 7. Save to DynamoDB (conditional write)
  * 8. Return success response
@@ -24,27 +24,27 @@
  * - DynamoDB errors: 502 Bad Gateway
  * - Generic errors: 500 Internal Server Error
  *
- * @module lib/api/endpoints/deals/post/handler
+ * @module lib/api/endpoints/resource/post/handler
  */
 
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import { type TApiResponse } from "#src/helpers/api";
-import type { TResult, TCreateDealPayload } from "./types";
+import type { TResult, TCreateResourcePayload } from "./types";
 import {
   parseAndValidateBody,
   getRequiredEnv,
   normalizeData,
   validateData,
-  generateDealId,
-  buildDealItem,
-  saveDealToDynamoDB,
+  generateResourceId,
+  buildResourceItem,
+  saveResourceToDynamoDB,
   prepareSuccessResponse,
   prepareErrorResponse,
   logEventReceived,
 } from "./helpers";
 
 /**
- * Lambda handler for creating deals
+ * Lambda handler for creating resources
  *
  * Pure orchestration function that delegates to helper functions.
  * No business logic - only coordinates the flow.
@@ -69,8 +69,8 @@ import {
  * // Returns: {
  * //   statusCode: 200,
  * //   body: JSON.stringify({
- * //     message: "Deal successfully created",
- * //     dealId: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
+ *     message: "Resource successfully created",
+ *     resourceId: "2D9RGmKVg3KKf7mJJQhWWqH9Gfm"
  * //   })
  * // }
  *
@@ -101,7 +101,7 @@ export const handler = async (
   // Parse + validate body (zod)
   const bodyResult = parseAndValidateBody(event);
   if (!bodyResult.ok) return bodyResult.response;
-  const data: TCreateDealPayload = bodyResult.data;
+  const data: TCreateResourcePayload = bodyResult.data;
 
   // Env asserts
   const envResult = getRequiredEnv();
@@ -113,15 +113,15 @@ export const handler = async (
     const normalizedData = normalizeData(data);
     validateData(normalizedData);
 
-    // Generate server-side dealId
-    const dealId = generateDealId();
+    // Generate server-side resourceId
+    const resourceId = generateResourceId();
 
     // Build item and save with conditional write
-    const dealItem = buildDealItem(normalizedData, dealId);
-    const saveResult = await saveDealToDynamoDB(tableName, dealItem);
+    const resourceItem = buildResourceItem(normalizedData, resourceId);
+    const saveResult = await saveResourceToDynamoDB(tableName, resourceItem);
     if (!saveResult.ok) return saveResult.response;
 
-    const successResponse = prepareSuccessResponse(dealId);
+    const successResponse = prepareSuccessResponse(resourceId);
     return successResponse;
   } catch (err) {
     return prepareErrorResponse(err);
