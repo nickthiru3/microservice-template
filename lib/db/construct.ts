@@ -23,7 +23,12 @@
 
 import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { TableV2, AttributeType, StreamViewType } from "aws-cdk-lib/aws-dynamodb";
+import {
+  TableV2,
+  AttributeType,
+  StreamViewType,
+  ProjectionType,
+} from "aws-cdk-lib/aws-dynamodb";
 import type { IConfig } from "#config/default";
 
 /**
@@ -111,6 +116,7 @@ class DatabaseConstruct extends Construct {
             name: "GSI1SK",
             type: AttributeType.STRING,
           },
+          projectionType: ProjectionType.ALL,
         },
       ],
       // Prevent accidental deletion in production/staging
@@ -123,7 +129,9 @@ class DatabaseConstruct extends Construct {
       removalPolicy: shouldProtectFromDeletion
         ? RemovalPolicy.RETAIN
         : RemovalPolicy.DESTROY,
-      dynamoStream: enableStreams ? StreamViewType.NEW_AND_OLD_IMAGES : undefined,
+      dynamoStream: enableStreams
+        ? StreamViewType.NEW_AND_OLD_IMAGES
+        : undefined,
     });
 
     const tableName = this.table.tableName;
